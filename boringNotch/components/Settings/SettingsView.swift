@@ -45,6 +45,9 @@ struct SettingsView: View {
                 NavigationLink(value: "Battery") {
                     Label("Battery", systemImage: "battery.100.bolt")
                 }
+                NavigationLink(value: "Agent Activity") {
+                    Label("Agent Activity", systemImage: "sparkles")
+                }
 //                NavigationLink(value: "Downloads") {
 //                    Label("Downloads", systemImage: "square.and.arrow.down")
 //                }
@@ -83,6 +86,8 @@ struct SettingsView: View {
                     HUD()
                 case "Battery":
                     Charge()
+                case "Agent Activity":
+                    AgentActivitySettings()
                 case "Shelf":
                     Shelf()
                 case "Shortcuts":
@@ -379,6 +384,56 @@ struct Charge: View {
         }
         .accentColor(.effectiveAccent)
         .navigationTitle("Battery")
+    }
+}
+
+struct AgentActivitySettings: View {
+    @ObservedObject var coordinator = BoringViewCoordinator.shared
+    @ObservedObject var agentActivityManager = AgentActivityManager.shared
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle(
+                    "Enable Agent Activity",
+                    isOn: $coordinator.agentActivityEnabled.animation()
+                )
+            } header: {
+                Text("General")
+            } footer: {
+                Text("Shows AI coding agent status, questions, and approval requests in the notch. Codex and other agent support ship in a later update — for now this previews the notch UI with simulated sessions.")
+            }
+
+            Section {
+                Toggle("Show running agents in closed notch", isOn: $coordinator.agentActivityShowPassiveClosed)
+                Toggle("Always open notch for questions and approvals", isOn: $coordinator.agentActivityOpenForAttention)
+            } header: {
+                Text("Notch Behavior")
+            }
+            .disabled(!coordinator.agentActivityEnabled)
+
+            Section {
+                Button("Start demo session") {
+                    agentActivityManager.startDemoSession()
+                }
+                Button("Simulate permission request") {
+                    agentActivityManager.demoRequestPermission()
+                }
+                Button("Simulate question") {
+                    agentActivityManager.demoAskQuestion()
+                }
+                Button("Complete demo session") {
+                    agentActivityManager.completeDemoSession()
+                }
+            } header: {
+                Text("Preview")
+            } footer: {
+                Text("Agent hooks aren't wired up yet, so use these to try the Agents tab and notch states with fake sessions.")
+            }
+            .disabled(!coordinator.agentActivityEnabled)
+        }
+        .accentColor(.effectiveAccent)
+        .navigationTitle("Agent Activity")
     }
 }
 

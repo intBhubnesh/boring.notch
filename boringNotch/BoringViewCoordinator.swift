@@ -61,6 +61,18 @@ class BoringViewCoordinator: ObservableObject {
     @AppStorage("musicLiveActivityEnabled") var musicLiveActivityEnabled: Bool = true
     @AppStorage("currentMicStatus") var currentMicStatus: Bool = true
 
+    // MARK: - Agent Activity
+    @Published var agentAttentionSessionID: String?
+    @AppStorage("agentActivityEnabled") var agentActivityEnabled: Bool = false {
+        didSet {
+            if !agentActivityEnabled && currentView == .agents {
+                currentView = .home
+            }
+        }
+    }
+    @AppStorage("agentActivityShowPassiveClosed") var agentActivityShowPassiveClosed: Bool = true
+    @AppStorage("agentActivityOpenForAttention") var agentActivityOpenForAttention: Bool = true
+
     @AppStorage("alwaysShowTabs") var alwaysShowTabs: Bool = true {
         didSet {
             if !alwaysShowTabs {

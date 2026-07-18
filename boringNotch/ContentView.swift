@@ -20,6 +20,7 @@ struct ContentView: View {
 
     @ObservedObject var coordinator = BoringViewCoordinator.shared
     @ObservedObject var musicManager = MusicManager.shared
+    @ObservedObject var agentActivityManager = AgentActivityManager.shared
     @ObservedObject var batteryModel = BatteryStatusViewModel.shared
     @ObservedObject var brightnessManager = BrightnessManager.shared
     @ObservedObject var volumeManager = VolumeManager.shared
@@ -61,7 +62,11 @@ struct ContentView: View {
     private var computedChinWidth: CGFloat {
         var chinWidth: CGFloat = vm.closedNotchSize.width
 
-        if coordinator.expandingView.type == .battery && coordinator.expandingView.show
+        if coordinator.agentActivityEnabled && coordinator.agentAttentionSessionID != nil
+            && vm.notchState == .closed && !vm.hideOnClosed
+        {
+            chinWidth += (max(0, vm.effectiveClosedNotchHeight - 12) + 20 + AgentLiveActivityView.statusWidth)
+        } else if coordinator.expandingView.type == .battery && coordinator.expandingView.show
             && vm.notchState == .closed && Defaults[.showPowerStatusNotifications]
         {
             chinWidth = 640
@@ -70,6 +75,11 @@ struct ContentView: View {
             && coordinator.musicLiveActivityEnabled && !vm.hideOnClosed
         {
             chinWidth += (2 * max(0, vm.effectiveClosedNotchHeight - 12) + 20)
+        } else if !coordinator.expandingView.show && vm.notchState == .closed
+            && coordinator.agentActivityEnabled && coordinator.agentActivityShowPassiveClosed
+            && agentActivityManager.runningCount > 0 && !vm.hideOnClosed
+        {
+            chinWidth += (max(0, vm.effectiveClosedNotchHeight - 12) + 20 + AgentLiveActivityView.statusWidth)
         } else if !coordinator.expandingView.show && vm.notchState == .closed
             && (!musicManager.isPlaying && musicManager.isPlayerIdle) && Defaults[.showNotHumanFace]
             && !vm.hideOnClosed
@@ -167,6 +177,13 @@ struct ContentView: View {
                             }
                         }
                     }
+                    .onChange(of: coordinator.agentAttentionSessionID) { _, sessionID in
+                        guard sessionID != nil else { return }
+                        coordinator.currentView = .agents
+                        if coordinator.agentActivityOpenForAttention && vm.notchState == .closed {
+                            doOpen()
+                        }
+                    }
                     .onChange(of: vm.isBatteryPopoverActive) {
                         if !vm.isBatteryPopoverActive && !isHovering && vm.notchState == .open && !SharingStateManager.shared.preventNotchClose {
                             hoverTask?.cancel()
@@ -257,7 +274,11 @@ struct ContentView: View {
                     .padding(.top, 40)
                     Spacer()
                 } else {
-                    if coordinator.expandingView.type == .battery && coordinator.expandingView.show
+                    if coordinator.agentActivityEnabled && coordinator.agentAttentionSessionID != nil
+                        && vm.notchState == .closed && !vm.hideOnClosed
+                    {
+                        AgentAttentionView()
+                    } else if coordinator.expandingView.type == .battery && coordinator.expandingView.show
                         && vm.notchState == .closed && Defaults[.showPowerStatusNotifications]
                     {
                         HStack(spacing: 0) {
@@ -290,6 +311,8 @@ struct ContentView: View {
                       } else if (!coordinator.expandingView.show || coordinator.expandingView.type == .music) && vm.notchState == .closed && (musicManager.isPlaying || !musicManager.isPlayerIdle) && coordinator.musicLiveActivityEnabled && !vm.hideOnClosed {
                           MusicLiveActivity()
                               .frame(alignment: .center)
+                      } else if !coordinator.expandingView.show && vm.notchState == .closed && coordinator.agentActivityEnabled && coordinator.agentActivityShowPassiveClosed && agentActivityManager.runningCount > 0 && !vm.hideOnClosed {
+                          AgentLiveActivityView()
                       } else if !coordinator.expandingView.show && vm.notchState == .closed && (!musicManager.isPlaying && musicManager.isPlayerIdle) && Defaults[.showNotHumanFace] && !vm.hideOnClosed  {
                           BoringFaceAnimation()
                        } else if vm.notchState == .open {
@@ -349,6 +372,8 @@ struct ContentView: View {
                         NotchHomeView(albumArtNamespace: albumArtNamespace)
                     case .shelf:
                         ShelfView()
+                    case .agents:
+                        AgentsTabView()
                     }
                 }
                 .transition(
