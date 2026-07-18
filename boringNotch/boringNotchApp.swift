@@ -26,6 +26,12 @@ struct DynamicNotchApp: App {
 
         // Initialize the settings window controller with the updater controller
         SettingsWindowController.shared.setUpdaterController(updaterController)
+
+        if UserDefaults.standard.object(forKey: "agentActivityEnabled") as? Bool == true {
+            Task { @MainActor in
+                AgentActivityManager.shared.startBridge()
+            }
+        }
     }
 
     var body: some Scene {
@@ -83,6 +89,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             screenUnlockedObserver = nil
         }
         MusicManager.shared.destroy()
+        AgentActivityManager.shared.stopBridge()
         cleanupDragDetectors()
         cleanupWindows()
         XPCHelperClient.shared.stopMonitoringAccessibilityAuthorization()
@@ -280,6 +287,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        let agentActivityEnabled = UserDefaults.standard.object(forKey: "agentActivityEnabled") as? Bool
+            ?? BoringViewCoordinator.shared.agentActivityEnabled
+        AgentActivityManager.shared.setBridgeEnabled(agentActivityEnabled)
 
         NotificationCenter.default.addObserver(
             self,

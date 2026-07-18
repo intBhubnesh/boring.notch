@@ -6,10 +6,9 @@
 //  Octane0411/open-vibe-island (GPL v3).
 //
 //  AgentActivityManager is the single app-facing owner of agent session
-//  state. This phase drives it with synthetic ("demo") events only; a later
-//  phase will feed it real events from a local IPC bridge without changing
-//  this surface — resolvePermission(_:_:) and answerQuestion(_:_:) are
-//  already the exact seam that bridge will call into.
+//  state. Demo events and real local bridge events both flow through the same
+//  reducer, and user actions are routed back to pending hook clients when
+//  applicable.
 
 import Combine
 import Foundation
@@ -25,6 +24,8 @@ final class AgentActivityManager: ObservableObject {
     }
 
     private var demoSessionID: String?
+    private var bridgeServer: BridgeServer?
+    private var processScannerTask: Task<Void, Never>?
 
     private init() {}
 
@@ -36,14 +37,82 @@ final class AgentActivityManager: ObservableObject {
         state.apply(event)
     }
 
+    func setBridgeEnabled(_ isEnabled: Bool) {
+        if isEnabled {
+            startBridge()
+        } else {
+            stopBridge()
+        }
+    }
+
+    func startBridge() {
+        startProcessScanner()
+        guard bridgeServer == nil else { return }
+
+        let server = BridgeServer { event in
+            DispatchQueue.main.async {
+                AgentActivityManager.shared.apply(event)
+            }
+        }
+
+        do {
+            try server.start()
+            bridgeServer = server
+            NSLog("Boring Notch agent bridge started at \(AgentBridgeTransport.socketPath)")
+        } catch {
+            bridgeServer = nil
+            NSLog("Boring Notch agent bridge failed to start: \(error.localizedDescription)")
+        }
+    }
+
+    func stopBridge() {
+        bridgeServer?.stop()
+        bridgeServer = nil
+        stopProcessScanner()
+    }
+
     func resolvePermission(sessionID: String, resolution: PermissionResolution) {
         guard let requestID = state.sessions[sessionID]?.pendingPermission?.id else { return }
         apply(.permissionResolved(sessionID: sessionID, requestID: requestID, resolution: resolution, at: Date()))
+        bridgeServer?.resolvePermission(sessionID: sessionID, requestID: requestID, resolution: resolution)
     }
 
     func answerQuestion(sessionID: String, response: QuestionPromptResponse) {
         guard let questionID = state.sessions[sessionID]?.pendingQuestion?.id else { return }
         apply(.questionAnswered(sessionID: sessionID, questionID: questionID, response: response, at: Date()))
+        bridgeServer?.answerQuestion(sessionID: sessionID, questionID: questionID, response: response)
+    }
+
+    func refreshRunningProcesses() async {
+        do {
+            let snapshots = try await XPCHelperClient.shared.runningAgentProcesses()
+            NSLog("Boring Notch agent process scan found \(snapshots.count) process(es)")
+            state.reconcileProcessSnapshots(snapshots)
+        } catch {
+            NSLog("Boring Notch agent process scan failed: \(error.localizedDescription)")
+            // Process discovery is best-effort; hook events remain the source of truth
+            // for questions and approvals.
+        }
+    }
+
+    private func startProcessScanner() {
+        guard processScannerTask == nil else { return }
+        processScannerTask = Task { [weak self] in
+            while !Task.isCancelled {
+                await self?.refreshRunningProcesses()
+                do {
+                    try await Task.sleep(for: .seconds(5))
+                } catch {
+                    break
+                }
+            }
+        }
+    }
+
+    private func stopProcessScanner() {
+        processScannerTask?.cancel()
+        processScannerTask = nil
+        state.reconcileProcessSnapshots([])
     }
 
     // MARK: - Demo / preview support

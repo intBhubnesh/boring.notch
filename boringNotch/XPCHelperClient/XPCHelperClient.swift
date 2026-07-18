@@ -241,10 +241,108 @@ final class XPCHelperClient: NSObject {
             return false
         }
     }
+
+    // MARK: - Agent Hook Installation
+
+    nonisolated func agentHookStatus(for tool: String) async throws -> AgentHookStatus {
+        let service = await MainActor.run {
+            ensureRemoteService()
+        }
+        let result: Result<AgentHookStatus, Error> = try await service.withContinuation { service, continuation in
+            service.agentHookStatus(forTool: tool) { status in
+                continuation.resume(returning: Self.agentHookResult(status: status))
+            }
+        }
+        return try result.get()
+    }
+
+    nonisolated func installAgentHooks(for tool: String) async throws -> AgentHookStatus {
+        let service = await MainActor.run {
+            ensureRemoteService()
+        }
+        let sourcePath = Bundle.main.bundleURL
+            .appendingPathComponent("Contents/Helpers/BoringNotchAgentHooks")
+            .path
+        let result: Result<AgentHookStatus, Error> = try await service.withContinuation { service, continuation in
+            service.installAgentHooks(forTool: tool, hookBinarySourcePath: sourcePath) { status in
+                continuation.resume(returning: Self.agentHookResult(status: status))
+            }
+        }
+        return try result.get()
+    }
+
+    nonisolated func uninstallAgentHooks(for tool: String) async throws -> AgentHookStatus {
+        let service = await MainActor.run {
+            ensureRemoteService()
+        }
+        let result: Result<AgentHookStatus, Error> = try await service.withContinuation { service, continuation in
+            service.uninstallAgentHooks(forTool: tool) { status in
+                continuation.resume(returning: Self.agentHookResult(status: status))
+            }
+        }
+        return try result.get()
+    }
+
+    nonisolated func runningAgentProcesses() async throws -> [AgentProcessSnapshot] {
+        let service = await MainActor.run {
+            ensureRemoteService()
+        }
+        let result: Result<[AgentProcessSnapshot], Error> = try await service.withContinuation { service, continuation in
+            service.runningAgentProcesses { data in
+                let observedAt = Date()
+                let object = Self.agentPayloadObject(data: data)
+                let snapshots = (object as? [[String: Any]])?.compactMap {
+                    AgentProcessSnapshot(xpcDictionary: $0, observedAt: observedAt)
+                } ?? []
+                continuation.resume(returning: .success(snapshots))
+            }
+        }
+        return try result.get()
+    }
+
+    nonisolated func resetConnection() {
+        Task { @MainActor in
+            connection?.invalidate()
+            connection = nil
+            remoteService = nil
+        }
+    }
+
+    private nonisolated static func agentHookResult(status: String?) -> Result<AgentHookStatus, Error> {
+        guard let payload = agentPayloadObject(data: status),
+              let dictionary = payload as? [String: Any],
+              let parsedStatus = AgentHookStatus(xpcDictionary: dictionary) else {
+            return .failure(XPCHelperClientError.invalidAgentHookStatus)
+        }
+        return .success(parsedStatus)
+    }
+
+    private nonisolated static func agentPayloadObject(data: String?) -> Any? {
+        guard let data = data?.data(using: .utf8),
+              let envelope = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return nil
+        }
+        if envelope["ok"] as? Bool == true {
+            return envelope["payload"]
+        }
+        return nil
+    }
 }
 
 extension Notification.Name {
     static let accessibilityAuthorizationChanged = Notification.Name("accessibilityAuthorizationChanged")
 }
 
+private enum XPCHelperClientError: Error, LocalizedError {
+    case invalidAgentHookStatus
+    case agentHookInstallFailed(String)
 
+    var errorDescription: String? {
+        switch self {
+        case .invalidAgentHookStatus:
+            "The helper returned an invalid hook install status."
+        case let .agentHookInstallFailed(message):
+            message
+        }
+    }
+}

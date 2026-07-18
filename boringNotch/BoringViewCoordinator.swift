@@ -65,6 +65,7 @@ class BoringViewCoordinator: ObservableObject {
     @Published var agentAttentionSessionID: String?
     @AppStorage("agentActivityEnabled") var agentActivityEnabled: Bool = false {
         didSet {
+            AgentActivityManager.shared.setBridgeEnabled(agentActivityEnabled)
             if !agentActivityEnabled && currentView == .agents {
                 currentView = .home
             }

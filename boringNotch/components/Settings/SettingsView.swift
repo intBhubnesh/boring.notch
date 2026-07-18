@@ -390,6 +390,7 @@ struct Charge: View {
 struct AgentActivitySettings: View {
     @ObservedObject var coordinator = BoringViewCoordinator.shared
     @ObservedObject var agentActivityManager = AgentActivityManager.shared
+    @ObservedObject var hookInstallationManager = AgentHookInstallationManager.shared
 
     var body: some View {
         Form {
@@ -401,7 +402,7 @@ struct AgentActivitySettings: View {
             } header: {
                 Text("General")
             } footer: {
-                Text("Shows AI coding agent status, questions, and approval requests in the notch. Codex and other agent support ship in a later update — for now this previews the notch UI with simulated sessions.")
+                Text("Shows AI coding agent status, questions, and approval requests in the notch. Install hooks for each agent you want Boring Notch to monitor.")
             }
 
             Section {
@@ -411,6 +412,36 @@ struct AgentActivitySettings: View {
                 Text("Notch Behavior")
             }
             .disabled(!coordinator.agentActivityEnabled)
+
+            Section {
+                agentHookRow(
+                    title: "Codex",
+                    subtitle: hookInstallationManager.codexStatus.detail,
+                    status: hookInstallationManager.codexStatus,
+                    tool: .codex
+                )
+                agentHookRow(
+                    title: "Claude Code",
+                    subtitle: hookInstallationManager.claudeStatus.detail,
+                    status: hookInstallationManager.claudeStatus,
+                    tool: .claudeCode
+                )
+
+                if let lastError = hookInstallationManager.lastError {
+                    Text(lastError)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                }
+
+                Button("Refresh hook status") {
+                    hookInstallationManager.refresh()
+                }
+            } header: {
+                Text("Hook Installation")
+            } footer: {
+                Text("Codex may ask you to trust newly installed hooks from /hooks. Boring Notch backs up config files before changing managed entries.")
+            }
+            .disabled(hookInstallationManager.isWorking)
 
             Section {
                 Button("Start demo session") {
@@ -428,12 +459,77 @@ struct AgentActivitySettings: View {
             } header: {
                 Text("Preview")
             } footer: {
-                Text("Agent hooks aren't wired up yet, so use these to try the Agents tab and notch states with fake sessions.")
+                Text("Use these to exercise the notch UI without starting an external agent.")
             }
             .disabled(!coordinator.agentActivityEnabled)
         }
+        .onAppear {
+            hookInstallationManager.refresh()
+        }
         .accentColor(.effectiveAccent)
         .navigationTitle("Agent Activity")
+    }
+
+    private func agentHookRow(
+        title: String,
+        subtitle: String,
+        status: AgentHookStatus,
+        tool: AgentTool
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Image(systemName: tool.sfSymbol)
+                    .foregroundStyle(statusColor(status.state))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Text(statusLabel(status.state))
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(statusColor(status.state))
+            }
+
+            if let hookBinaryPath = status.hookBinaryPath {
+                Text(hookBinaryPath)
+                    .font(.caption2.monospaced())
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            }
+
+            HStack {
+                Button("Install") {
+                    hookInstallationManager.install(tool)
+                }
+                .disabled(status.state == .installed)
+
+                Button("Uninstall", role: .destructive) {
+                    hookInstallationManager.uninstall(tool)
+                }
+                .disabled(status.state == .notInstalled)
+            }
+            .controlSize(.small)
+        }
+        .padding(.vertical, 4)
+    }
+
+    private func statusLabel(_ state: AgentHookInstallState) -> String {
+        switch state {
+        case .notInstalled: "Not installed"
+        case .installed: "Installed"
+        case .needsAttention: "Needs repair"
+        }
+    }
+
+    private func statusColor(_ state: AgentHookInstallState) -> Color {
+        switch state {
+        case .notInstalled: .secondary
+        case .installed: .green
+        case .needsAttention: .orange
+        }
     }
 }
 

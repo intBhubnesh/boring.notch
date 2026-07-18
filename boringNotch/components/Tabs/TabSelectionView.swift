@@ -5,13 +5,15 @@
 //  Created by Hugo Persson on 2024-08-25.
 //
 
+import Defaults
 import SwiftUI
 
 struct TabModel: Identifiable {
-    let id = UUID()
     let label: String
     let icon: String
     let view: NotchViews
+
+    var id: NotchViews { view }
 }
 
 struct TabSelectionView: View {
@@ -21,11 +23,14 @@ struct TabSelectionView: View {
     private var tabs: [TabModel] {
         var tabs = [
             TabModel(label: "Home", icon: "house.fill", view: .home),
-            TabModel(label: "Shelf", icon: "tray.fill", view: .shelf),
         ]
-        if coordinator.agentActivityEnabled {
-            tabs.append(TabModel(label: "Agents", icon: "sparkles", view: .agents))
+
+        if Defaults[.boringShelf] {
+            tabs.append(TabModel(label: "Shelf", icon: "tray.fill", view: .shelf))
         }
+
+        tabs.append(TabModel(label: "Agents", icon: "chevron.left.forwardslash.chevron.right", view: .agents))
+
         return tabs
     }
 

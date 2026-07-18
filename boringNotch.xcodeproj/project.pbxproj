@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		00665841584E188AF502542E /* AgentTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC8E84268A93782F7AF7371B /* AgentTool.swift */; };
+		0A379DB0038739914B1D7DE0 /* SessionPhase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C928C2F93F6FCBA1EBEFEDB /* SessionPhase.swift */; };
 		1100290C2E847E2800035A57 /* NSItemProvider+LoadHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1100290B2E847E2800035A57 /* NSItemProvider+LoadHelpers.swift */; };
 		110029272E84FD4C00035A57 /* TemporaryFileStorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110029262E84FD4C00035A57 /* TemporaryFileStorageService.swift */; };
 		1100292A2E8691B400035A57 /* FileShareView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110029292E8691B400035A57 /* FileShareView.swift */; };
@@ -80,7 +82,6 @@
 		1443E7F32C609DCE0027C1FC /* matters.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1443E7F22C609DCE0027C1FC /* matters.swift */; };
 		147163982C5D35B70068B555 /* MusicVisualizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 147163972C5D35B70068B555 /* MusicVisualizer.swift */; };
 		1471639A2C5D35FF0068B555 /* MusicManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 147163992C5D35FF0068B555 /* MusicManager.swift */; };
-		B7B863345E4F0B90191FE915 /* AgentActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1870FA9673F4F3392D38C3D8 /* AgentActivityManager.swift */; };
 		1471A8592C6281BD0058408D /* BoringNotchWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1471A8582C6281BD0058408D /* BoringNotchWindow.swift */; };
 		149E0B972C737D00006418B1 /* WebcamManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 149E0B962C737D00006418B1 /* WebcamManager.swift */; };
 		149E0B9A2C737D40006418B1 /* WebcamView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 149E0B992C737D40006418B1 /* WebcamView.swift */; };
@@ -107,6 +108,7 @@
 		14E9FEAA2C70BF610062E83F /* DownloadView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14E9FEA92C70BF610062E83F /* DownloadView.swift */; };
 		14E9FEAE2C7325770062E83F /* Button+Bouncing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14E9FEAD2C7325770062E83F /* Button+Bouncing.swift */; };
 		14FC6E502C7DED5600C7BEA5 /* DataTypes+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14FC6E4F2C7DED5600C7BEA5 /* DataTypes+Extensions.swift */; };
+		39D0816F93BC374A2A134143 /* SessionState.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC7172CAF2D496F8528E81DB /* SessionState.swift */; };
 		507266DB2C908E2E00A2D00D /* HoverButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 507266DA2C908E2E00A2D00D /* HoverButton.swift */; };
 		5917FD112E57891600E87F1C /* MediaKeyInterceptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5917FD102E57891600E87F1C /* MediaKeyInterceptor.swift */; };
 		5955950D2E900ED800C66711 /* ApplicationRelauncher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5955950C2E900ED800C66711 /* ApplicationRelauncher.swift */; };
@@ -116,6 +118,7 @@
 		9A987A0D2C73CA66005CA465 /* ShelfView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A987A032C73CA66005CA465 /* ShelfView.swift */; };
 		9A987A102C73CA8D005CA465 /* Collections in Frameworks */ = {isa = PBXBuildFile; productRef = 9A987A0F2C73CA8D005CA465 /* Collections */; };
 		9AB0C6BD2C73C9CB00F7CD30 /* NotchHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AB0C6BB2C73C9CB00F7CD30 /* NotchHomeView.swift */; };
+		A3B2C8F94B7A12CD8C261337 /* QuestionPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9EB1842C2AF49635A1950C9 /* QuestionPrompt.swift */; };
 		B10348D92C74E56000475897 /* ConditionalModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10348D82C74E56000475897 /* ConditionalModifier.swift */; };
 		B10F84A32C6C9596009F3026 /* TestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10F84A22C6C9596009F3026 /* TestView.swift */; };
 		B141C2412CA5F53F00AC8CC8 /* SparkleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B141C2402CA5F53E00AC8CC8 /* SparkleView.swift */; };
@@ -143,15 +146,18 @@
 		B1F0A0022E60000100000001 /* BrightnessManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1F0A0012E60000100000001 /* BrightnessManager.swift */; };
 		B1F747F92EC7E94000F841DB /* LottieView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1F747F82EC7E94000F841DB /* LottieView.swift */; };
 		B1FEB4992C7686630066EBBC /* PanGesture.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1FEB4982C7686630066EBBC /* PanGesture.swift */; };
-		F38DE6482D8243E7008B5C6D /* BatteryActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F38DE6472D8243E2008B5C6D /* BatteryActivityManager.swift */; };
-		00665841584E188AF502542E /* AgentTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC8E84268A93782F7AF7371B /* AgentTool.swift */; };
-		0A379DB0038739914B1D7DE0 /* SessionPhase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C928C2F93F6FCBA1EBEFEDB /* SessionPhase.swift */; };
+		B7B863345E4F0B90191FE915 /* AgentActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1870FA9673F4F3392D38C3D8 /* AgentActivityManager.swift */; };
 		C3074CF254327B4AD2C6D875 /* PermissionRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = A284F9ECA968F65ECFA0BE4F /* PermissionRequest.swift */; };
-		A3B2C8F94B7A12CD8C261337 /* QuestionPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9EB1842C2AF49635A1950C9 /* QuestionPrompt.swift */; };
 		D0CCA4734ADFCF26CC1D6A0D /* AgentEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39002CB76FB4176F16C55588 /* AgentEvent.swift */; };
-		E6361CF34FDE091D4A5036B6 /* AgentSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ADC8035C4CEC7EF3C6DBB98 /* AgentSession.swift */; };
-		39D0816F93BC374A2A134143 /* SessionState.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC7172CAF2D496F8528E81DB /* SessionState.swift */; };
+		D1A000000000000000000001 /* BridgeTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A000000000000000000002 /* BridgeTransport.swift */; };
+		D1A000000000000000000003 /* ../boringNotch/Agents/Integrations/Codex/CodexHookPayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A000000000000000000004 /* ../boringNotch/Agents/Integrations/Codex/CodexHookPayload.swift */; };
+		D1A000000000000000000005 /* CodexHookPayloadTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A000000000000000000006 /* CodexHookPayloadTests.swift */; };
+		D1B000000000000000000001 /* ../boringNotch/Agents/Integrations/Claude/ClaudeHookPayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1B000000000000000000002 /* ../boringNotch/Agents/Integrations/Claude/ClaudeHookPayload.swift */; };
+		D1B000000000000000000003 /* ClaudeHookPayloadTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1B000000000000000000004 /* ClaudeHookPayloadTests.swift */; };
+		D1D000000000000000000001 /* AgentProcessSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1D000000000000000000002 /* AgentProcessSnapshot.swift */; };
 		DB91FB7BB089984B42118E30 /* SessionStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03A08B7DBF30F9E4EBC6ACB7 /* SessionStateTests.swift */; };
+		E6361CF34FDE091D4A5036B6 /* AgentSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ADC8035C4CEC7EF3C6DBB98 /* AgentSession.swift */; };
+		F38DE6482D8243E7008B5C6D /* BatteryActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F38DE6472D8243E2008B5C6D /* BatteryActivityManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -190,6 +196,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		03A08B7DBF30F9E4EBC6ACB7 /* SessionStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStateTests.swift; sourceTree = "<group>"; };
 		1100290B2E847E2800035A57 /* NSItemProvider+LoadHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSItemProvider+LoadHelpers.swift"; sourceTree = "<group>"; };
 		110029262E84FD4C00035A57 /* TemporaryFileStorageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemporaryFileStorageService.swift; sourceTree = "<group>"; };
 		110029292E8691B400035A57 /* FileShareView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileShareView.swift; sourceTree = "<group>"; };
@@ -257,8 +264,6 @@
 		1443E7F42C609E650027C1FC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		147163972C5D35B70068B555 /* MusicVisualizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicVisualizer.swift; sourceTree = "<group>"; };
 		147163992C5D35FF0068B555 /* MusicManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicManager.swift; sourceTree = "<group>"; };
-		1870FA9673F4F3392D38C3D8 /* AgentActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentActivityManager.swift; sourceTree = "<group>"; };
-		DD844EFEF3075753160F968B /* boringNotchTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = boringNotchTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		1471A8582C6281BD0058408D /* BoringNotchWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoringNotchWindow.swift; sourceTree = "<group>"; };
 		149E0B962C737D00006418B1 /* WebcamManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebcamManager.swift; sourceTree = "<group>"; };
 		149E0B992C737D40006418B1 /* WebcamView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebcamView.swift; sourceTree = "<group>"; };
@@ -287,14 +292,20 @@
 		14E9FEA92C70BF610062E83F /* DownloadView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadView.swift; sourceTree = "<group>"; };
 		14E9FEAD2C7325770062E83F /* Button+Bouncing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Button+Bouncing.swift"; sourceTree = "<group>"; };
 		14FC6E4F2C7DED5600C7BEA5 /* DataTypes+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DataTypes+Extensions.swift"; sourceTree = "<group>"; };
+		1870FA9673F4F3392D38C3D8 /* AgentActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentActivityManager.swift; sourceTree = "<group>"; };
+		39002CB76FB4176F16C55588 /* AgentEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentEvent.swift; sourceTree = "<group>"; };
 		507266DA2C908E2E00A2D00D /* HoverButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HoverButton.swift; sourceTree = "<group>"; };
 		5917FD102E57891600E87F1C /* MediaKeyInterceptor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaKeyInterceptor.swift; sourceTree = "<group>"; };
 		5955950C2E900ED800C66711 /* ApplicationRelauncher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationRelauncher.swift; sourceTree = "<group>"; };
 		59D8C23B2E589FAA00147B33 /* VolumeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolumeManager.swift; sourceTree = "<group>"; };
+		6C928C2F93F6FCBA1EBEFEDB /* SessionPhase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionPhase.swift; sourceTree = "<group>"; };
+		7ADC8035C4CEC7EF3C6DBB98 /* AgentSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentSession.swift; sourceTree = "<group>"; };
 		9A0887312C7A693000C160EA /* TabButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabButton.swift; sourceTree = "<group>"; };
 		9A0887342C7AFF8E00C160EA /* TabSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabSelectionView.swift; sourceTree = "<group>"; };
 		9A987A032C73CA66005CA465 /* ShelfView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ShelfView.swift; sourceTree = "<group>"; };
 		9AB0C6BB2C73C9CB00F7CD30 /* NotchHomeView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NotchHomeView.swift; sourceTree = "<group>"; };
+		A284F9ECA968F65ECFA0BE4F /* PermissionRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionRequest.swift; sourceTree = "<group>"; };
+		AC8E84268A93782F7AF7371B /* AgentTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentTool.swift; sourceTree = "<group>"; };
 		B10348D82C74E56000475897 /* ConditionalModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConditionalModifier.swift; sourceTree = "<group>"; };
 		B10F84A22C6C9596009F3026 /* TestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestView.swift; sourceTree = "<group>"; };
 		B141C2402CA5F53E00AC8CC8 /* SparkleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SparkleView.swift; sourceTree = "<group>"; };
@@ -319,15 +330,16 @@
 		B1F0A0012E60000100000001 /* BrightnessManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrightnessManager.swift; sourceTree = "<group>"; };
 		B1F747F82EC7E94000F841DB /* LottieView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LottieView.swift; sourceTree = "<group>"; };
 		B1FEB4982C7686630066EBBC /* PanGesture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanGesture.swift; sourceTree = "<group>"; };
-		F38DE6472D8243E2008B5C6D /* BatteryActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatteryActivityManager.swift; sourceTree = "<group>"; };
-		AC8E84268A93782F7AF7371B /* AgentTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentTool.swift; sourceTree = "<group>"; };
-		6C928C2F93F6FCBA1EBEFEDB /* SessionPhase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionPhase.swift; sourceTree = "<group>"; };
-		A284F9ECA968F65ECFA0BE4F /* PermissionRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionRequest.swift; sourceTree = "<group>"; };
+		D1A000000000000000000002 /* BridgeTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeTransport.swift; sourceTree = "<group>"; };
+		D1A000000000000000000004 /* ../boringNotch/Agents/Integrations/Codex/CodexHookPayload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ../boringNotch/Agents/Integrations/Codex/CodexHookPayload.swift; sourceTree = "<group>"; };
+		D1A000000000000000000006 /* CodexHookPayloadTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexHookPayloadTests.swift; sourceTree = "<group>"; };
+		D1B000000000000000000002 /* ../boringNotch/Agents/Integrations/Claude/ClaudeHookPayload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ../boringNotch/Agents/Integrations/Claude/ClaudeHookPayload.swift; sourceTree = "<group>"; };
+		D1B000000000000000000004 /* ClaudeHookPayloadTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeHookPayloadTests.swift; sourceTree = "<group>"; };
+		D1D000000000000000000002 /* AgentProcessSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentProcessSnapshot.swift; sourceTree = "<group>"; };
 		D9EB1842C2AF49635A1950C9 /* QuestionPrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuestionPrompt.swift; sourceTree = "<group>"; };
-		39002CB76FB4176F16C55588 /* AgentEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentEvent.swift; sourceTree = "<group>"; };
-		7ADC8035C4CEC7EF3C6DBB98 /* AgentSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentSession.swift; sourceTree = "<group>"; };
+		DD844EFEF3075753160F968B /* boringNotchTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = boringNotchTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		F38DE6472D8243E2008B5C6D /* BatteryActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatteryActivityManager.swift; sourceTree = "<group>"; };
 		FC7172CAF2D496F8528E81DB /* SessionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionState.swift; sourceTree = "<group>"; };
-		03A08B7DBF30F9E4EBC6ACB7 /* SessionStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStateTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -669,6 +681,23 @@
 			path = models;
 			sourceTree = "<group>";
 		};
+		7D27DA151C5BA066E67F4897 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				AC8E84268A93782F7AF7371B /* AgentTool.swift */,
+				6C928C2F93F6FCBA1EBEFEDB /* SessionPhase.swift */,
+				A284F9ECA968F65ECFA0BE4F /* PermissionRequest.swift */,
+				D9EB1842C2AF49635A1950C9 /* QuestionPrompt.swift */,
+				39002CB76FB4176F16C55588 /* AgentEvent.swift */,
+				7ADC8035C4CEC7EF3C6DBB98 /* AgentSession.swift */,
+				D1D000000000000000000002 /* AgentProcessSnapshot.swift */,
+				FC7172CAF2D496F8528E81DB /* SessionState.swift */,
+				D1A000000000000000000002 /* BridgeTransport.swift */,
+			);
+			name = Core;
+			path = ../boringNotch/Agents/Core;
+			sourceTree = "<group>";
+		};
 		9A0887332C7AFF7E00C160EA /* Tabs */ = {
 			isa = PBXGroup;
 			children = (
@@ -687,6 +716,19 @@
 				1113ABC42E80E27000EC13B2 /* Views */,
 			);
 			path = Shelf;
+			sourceTree = "<group>";
+		};
+		A3297B3F809C8D0DF9570C0E /* boringNotchTests */ = {
+			isa = PBXGroup;
+			children = (
+				03A08B7DBF30F9E4EBC6ACB7 /* SessionStateTests.swift */,
+				D1A000000000000000000006 /* CodexHookPayloadTests.swift */,
+				D1B000000000000000000004 /* ClaudeHookPayloadTests.swift */,
+				D1A000000000000000000004 /* ../boringNotch/Agents/Integrations/Codex/CodexHookPayload.swift */,
+				D1B000000000000000000002 /* ../boringNotch/Agents/Integrations/Claude/ClaudeHookPayload.swift */,
+				7D27DA151C5BA066E67F4897 /* Core */,
+			);
+			path = boringNotchTests;
 			sourceTree = "<group>";
 		};
 		B141C23B2CA5F50900AC8CC8 /* Onboarding */ = {
@@ -788,30 +830,6 @@
 			path = Tips;
 			sourceTree = "<group>";
 		};
-		A3297B3F809C8D0DF9570C0E /* boringNotchTests */ = {
-			isa = PBXGroup;
-			children = (
-				03A08B7DBF30F9E4EBC6ACB7 /* SessionStateTests.swift */,
-				7D27DA151C5BA066E67F4897 /* Core */,
-			);
-			path = boringNotchTests;
-			sourceTree = "<group>";
-		};
-		7D27DA151C5BA066E67F4897 /* Core */ = {
-			isa = PBXGroup;
-			children = (
-				AC8E84268A93782F7AF7371B /* AgentTool.swift */,
-				6C928C2F93F6FCBA1EBEFEDB /* SessionPhase.swift */,
-				A284F9ECA968F65ECFA0BE4F /* PermissionRequest.swift */,
-				D9EB1842C2AF49635A1950C9 /* QuestionPrompt.swift */,
-				39002CB76FB4176F16C55588 /* AgentEvent.swift */,
-				7ADC8035C4CEC7EF3C6DBB98 /* AgentSession.swift */,
-				FC7172CAF2D496F8528E81DB /* SessionState.swift */,
-			);
-			name = Core;
-			path = "../boringNotch/Agents/Core";
-			sourceTree = "<group>";
-		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -846,6 +864,7 @@
 				14CEF4102C5CAED300855D72 /* Resources */,
 				B1ECFA062C6FE58A002ACD87 /* Embed Frameworks */,
 				11F748412EC8051E00F841DB /* Embed XPC Services */,
+				D1C000000000000000000001 /* Build Agent Hook Helper */,
 			);
 			buildRules = (
 			);
@@ -957,13 +976,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		5567C50749B1461F3CBFA61A /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		14CEF4102C5CAED300855D72 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -977,7 +989,38 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		5567C50749B1461F3CBFA61A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		D1C000000000000000000001 /* Build Agent Hook Helper */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/BoringNotchAgentHooks/main.swift",
+			);
+			name = "Build Agent Hook Helper";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Helpers/BoringNotchAgentHooks",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -euo pipefail\nSOURCE=\"$SRCROOT/BoringNotchAgentHooks/main.swift\"\nDEST_DIR=\"$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH/Helpers\"\nDEST=\"$DEST_DIR/BoringNotchAgentHooks\"\nmkdir -p \"$DEST_DIR\"\n/usr/bin/swiftc \"$SOURCE\" -O -o \"$DEST\"\nchmod 755 \"$DEST\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		11F7484B2EC9AABA00F841DB /* Sources */ = {
@@ -1120,8 +1163,14 @@
 				A3B2C8F94B7A12CD8C261337 /* QuestionPrompt.swift in Sources */,
 				D0CCA4734ADFCF26CC1D6A0D /* AgentEvent.swift in Sources */,
 				E6361CF34FDE091D4A5036B6 /* AgentSession.swift in Sources */,
+				D1D000000000000000000001 /* AgentProcessSnapshot.swift in Sources */,
 				39D0816F93BC374A2A134143 /* SessionState.swift in Sources */,
+				D1A000000000000000000001 /* BridgeTransport.swift in Sources */,
+				D1A000000000000000000003 /* ../boringNotch/Agents/Integrations/Codex/CodexHookPayload.swift in Sources */,
+				D1B000000000000000000001 /* ../boringNotch/Agents/Integrations/Claude/ClaudeHookPayload.swift in Sources */,
 				DB91FB7BB089984B42118E30 /* SessionStateTests.swift in Sources */,
+				D1A000000000000000000005 /* CodexHookPayloadTests.swift in Sources */,
+				D1B000000000000000000003 /* ClaudeHookPayloadTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1417,23 +1466,6 @@
 			};
 			name = Release;
 		};
-		DBDFD764AFF2E7CB84D523BC /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_IDENTITY = "Apple Development";
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 271;
-				DEVELOPMENT_TEAM = "";
-				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				PRODUCT_BUNDLE_IDENTIFIER = theboringteam.boringnotch.Tests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
-			};
-			name = Debug;
-		};
 		5ED7B3CC5B641D263B2185B4 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1450,6 +1482,23 @@
 				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
+		};
+		DBDFD764AFF2E7CB84D523BC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 271;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = theboringteam.boringnotch.Tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
 		};
 /* End XCBuildConfiguration section */
 

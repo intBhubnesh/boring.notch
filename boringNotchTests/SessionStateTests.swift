@@ -126,4 +126,30 @@ final class SessionStateTests: XCTestCase {
         state.apply(.permissionRequested(sessionID: "a", request: request))
         XCTAssertEqual(state.activeActionableSession?.id, "a")
     }
+
+    func testProcessSnapshotsCreateUpdateAndRemoveProcessSessions() {
+        var state = SessionState()
+        let snapshot = AgentProcessSnapshot(
+            pid: 123,
+            parentPID: 10,
+            tool: .claudeCode,
+            executablePath: "/Users/mint/.vscode/extensions/anthropic.claude-code/resources/native-binary/claude",
+            commandLine: "claude --output-format stream-json",
+            parentExecutablePath: nil,
+            cwd: nil,
+            observedAt: date(0)
+        )
+
+        state.reconcileProcessSnapshots([snapshot], at: date(1))
+
+        XCTAssertEqual(state.runningCount, 1)
+        XCTAssertEqual(state.sessions[snapshot.sessionID]?.tool, .claudeCode)
+        XCTAssertEqual(state.sessions[snapshot.sessionID]?.phase, .running)
+        XCTAssertEqual(state.sessions[snapshot.sessionID]?.summary, "Detected from VS Code")
+
+        state.reconcileProcessSnapshots([], at: date(2))
+
+        XCTAssertTrue(state.sessions.isEmpty)
+        XCTAssertEqual(state.runningCount, 0)
+    }
 }

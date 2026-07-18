@@ -139,6 +139,61 @@ class BoringNotchXPCHelper: NSObject, BoringNotchXPCHelperProtocol {
         reply(false)
     }
 
+    // MARK: - Agent Hook Installation
+
+    @objc func agentHookStatus(forTool tool: String, with reply: @escaping (String?) -> Void) {
+        do {
+            let status = try AgentHookInstaller().status(for: tool)
+            reply(try successString(status.xpcDictionary))
+        } catch {
+            reply(failureString(error))
+        }
+    }
+
+    @objc func installAgentHooks(
+        forTool tool: String,
+        hookBinarySourcePath: String,
+        with reply: @escaping (String?) -> Void
+    ) {
+        do {
+            let status = try AgentHookInstaller().install(tool: tool, hookBinarySourcePath: hookBinarySourcePath)
+            reply(try successString(status.xpcDictionary))
+        } catch {
+            reply(failureString(error))
+        }
+    }
+
+    @objc func uninstallAgentHooks(forTool tool: String, with reply: @escaping (String?) -> Void) {
+        do {
+            let status = try AgentHookInstaller().uninstall(tool: tool)
+            reply(try successString(status.xpcDictionary))
+        } catch {
+            reply(failureString(error))
+        }
+    }
+
+    @objc func runningAgentProcesses(with reply: @escaping (String?) -> Void) {
+        do {
+            let processes = try AgentProcessScanner().runningAgentProcesses()
+            reply(try successString(processes))
+        } catch {
+            reply(failureString(error))
+        }
+    }
+
+    private func successString(_ payload: Any) throws -> String? {
+        try jsonString(["ok": true, "payload": payload])
+    }
+
+    private func failureString(_ error: Error) -> String? {
+        try? jsonString(["ok": false, "error": error.localizedDescription])
+    }
+
+    private func jsonString(_ object: Any) throws -> String? {
+        let data = try JSONSerialization.data(withJSONObject: object)
+        return String(data: data, encoding: .utf8)
+    }
+
     // MARK: - Private helpers for DisplayServices / IOKit access
     private func displayServicesGetBrightness(displayID: CGDirectDisplayID, out: inout Float) -> Bool {
         guard let sym = dlsym(DisplayServicesHandle.handle, "DisplayServicesGetBrightness") else { return false }

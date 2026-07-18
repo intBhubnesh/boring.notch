@@ -97,6 +97,41 @@ struct SessionState: Sendable {
         }
     }
 
+    mutating func reconcileProcessSnapshots(_ snapshots: [AgentProcessSnapshot], at: Date = Date()) {
+        let snapshotIDs = Set(snapshots.map(\.sessionID))
+
+        for snapshot in snapshots {
+            if var session = sessions[snapshot.sessionID] {
+                session.tool = snapshot.tool
+                session.title = snapshot.title
+                session.cwd = snapshot.cwd
+                session.summary = snapshot.summary
+                if !session.phase.isActionable {
+                    session.phase = .running
+                }
+                session.updatedAt = at
+                sessions[snapshot.sessionID] = session
+            } else {
+                sessions[snapshot.sessionID] = AgentSession(
+                    id: snapshot.sessionID,
+                    tool: snapshot.tool,
+                    title: snapshot.title,
+                    cwd: snapshot.cwd,
+                    phase: .running,
+                    summary: snapshot.summary,
+                    pendingPermission: nil,
+                    pendingQuestion: nil,
+                    createdAt: snapshot.observedAt,
+                    updatedAt: at
+                )
+            }
+        }
+
+        for sessionID in sessions.keys where sessionID.hasPrefix("process:") && !snapshotIDs.contains(sessionID) {
+            sessions.removeValue(forKey: sessionID)
+        }
+    }
+
     private mutating func update(_ sessionID: String, at: Date, _ mutate: (inout AgentSession) -> Void) {
         guard var session = sessions[sessionID] else { return }
         mutate(&session)
