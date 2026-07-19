@@ -27,13 +27,17 @@ struct AgentAttentionView: View {
 
     var body: some View {
         HStack {
-            Image(systemName: "exclamationmark.circle.fill")
-                .foregroundStyle(.orange)
-                .symbolRenderingMode(.hierarchical)
-                .frame(
-                    width: max(0, vm.effectiveClosedNotchHeight - 12),
-                    height: max(0, vm.effectiveClosedNotchHeight - 12)
-                )
+            ZStack {
+                Circle()
+                    .fill(.orange.opacity(0.18))
+                Image(systemName: session?.tool.sfSymbol ?? "exclamationmark.circle.fill")
+                    .foregroundStyle(.orange)
+                    .symbolRenderingMode(.hierarchical)
+            }
+            .frame(
+                width: max(0, vm.effectiveClosedNotchHeight - 12),
+                height: max(0, vm.effectiveClosedNotchHeight - 12)
+            )
 
             Rectangle()
                 .fill(.black)

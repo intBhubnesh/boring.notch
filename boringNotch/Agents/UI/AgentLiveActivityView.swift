@@ -22,12 +22,17 @@ struct AgentLiveActivityView: View {
 
     var body: some View {
         HStack {
-            Image(systemName: session?.tool.sfSymbol ?? "sparkles")
-                .foregroundStyle(.white)
-                .frame(
-                    width: max(0, vm.effectiveClosedNotchHeight - 12),
-                    height: max(0, vm.effectiveClosedNotchHeight - 12)
-                )
+            ZStack {
+                Circle()
+                    .fill((session?.tool.accentColor ?? .gray).opacity(0.18))
+                Image(systemName: session?.tool.sfSymbol ?? "sparkles")
+                    .foregroundStyle(session?.tool.accentColor ?? .white)
+                    .symbolRenderingMode(.hierarchical)
+            }
+            .frame(
+                width: max(0, vm.effectiveClosedNotchHeight - 12),
+                height: max(0, vm.effectiveClosedNotchHeight - 12)
+            )
 
             Rectangle()
                 .fill(.black)
@@ -35,7 +40,7 @@ struct AgentLiveActivityView: View {
 
             HStack {
                 if let session {
-                    Text(session.summary)
+                    Text(closedStatus(for: session))
                         .font(.caption2)
                         .foregroundStyle(.gray)
                         .lineLimit(1)
@@ -46,5 +51,12 @@ struct AgentLiveActivityView: View {
             .frame(width: Self.statusWidth, alignment: .leading)
         }
         .frame(height: vm.effectiveClosedNotchHeight, alignment: .center)
+    }
+
+    private func closedStatus(for session: AgentSession) -> String {
+        if let hostApplication = session.hostApplication {
+            return "\(session.tool.displayName) in \(hostApplication)"
+        }
+        return session.summary
     }
 }

@@ -17,17 +17,24 @@ import Foundation
 final class AgentActivityManager: ObservableObject {
     static let shared = AgentActivityManager()
 
-    @Published private(set) var state = SessionState() {
+    @Published private(set) var state: SessionState {
         didSet {
             BoringViewCoordinator.shared.agentAttentionSessionID = state.activeActionableSession?.id
+            savePersistedState()
         }
     }
+
+    private static let persistenceKey = "agentActivityPersistedSessions"
 
     private var demoSessionID: String?
     private var bridgeServer: BridgeServer?
     private var processScannerTask: Task<Void, Never>?
 
-    private init() {}
+    private init() {
+        var restoredState = Self.loadPersistedState()
+        restoredState.pruneStaleHookSessions()
+        state = restoredState
+    }
 
     var sessions: [AgentSession] { state.sortedSessions }
     var runningCount: Int { state.runningCount }
@@ -113,6 +120,25 @@ final class AgentActivityManager: ObservableObject {
         processScannerTask?.cancel()
         processScannerTask = nil
         state.reconcileProcessSnapshots([])
+    }
+
+    private func savePersistedState() {
+        let snapshot = state.persistenceSnapshot()
+        if snapshot.sessions.isEmpty {
+            UserDefaults.standard.removeObject(forKey: Self.persistenceKey)
+            return
+        }
+        if let data = try? JSONEncoder().encode(snapshot) {
+            UserDefaults.standard.set(data, forKey: Self.persistenceKey)
+        }
+    }
+
+    private static func loadPersistedState() -> SessionState {
+        guard let data = UserDefaults.standard.data(forKey: persistenceKey),
+              let state = try? JSONDecoder().decode(SessionState.self, from: data) else {
+            return SessionState()
+        }
+        return state
     }
 
     // MARK: - Demo / preview support

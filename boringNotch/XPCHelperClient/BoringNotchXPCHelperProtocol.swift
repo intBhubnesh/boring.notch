@@ -21,8 +21,8 @@ import Foundation
     func currentScreenBrightness(with reply: @escaping (NSNumber?) -> Void)
     func setScreenBrightness(_ value: Float, with reply: @escaping (Bool) -> Void)
     // Agent hook installation (performed by the unsandboxed helper)
-    func agentHookStatus(forTool tool: String, with reply: @escaping (String?) -> Void)
-    func installAgentHooks(forTool tool: String, hookBinarySourcePath: String, with reply: @escaping (String?) -> Void)
-    func uninstallAgentHooks(forTool tool: String, with reply: @escaping (String?) -> Void)
+    func agentHookStatus(forTool tool: String, configRootPath: String, with reply: @escaping (String?) -> Void)
+    func installAgentHooks(forTool tool: String, hookBinarySourcePath: String, configRootPath: String, with reply: @escaping (String?) -> Void)
+    func uninstallAgentHooks(forTool tool: String, configRootPath: String, with reply: @escaping (String?) -> Void)
     func runningAgentProcesses(with reply: @escaping (String?) -> Void)
 }

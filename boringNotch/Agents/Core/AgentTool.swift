@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import SwiftUI
 
 enum AgentTool: String, Codable, Sendable, Hashable, CaseIterable {
     case codex
@@ -38,6 +39,18 @@ enum AgentTool: String, Codable, Sendable, Hashable, CaseIterable {
         case .openCode: "terminal"
         case .kimi: "moon.stars"
         case .other: "terminal"
+        }
+    }
+
+    var accentColor: Color {
+        switch self {
+        case .codex: Color(red: 0.35, green: 0.61, blue: 1.0)
+        case .claudeCode: Color(red: 1.0, green: 0.53, blue: 0.22)
+        case .cursor: Color(red: 0.69, green: 0.49, blue: 1.0)
+        case .gemini: Color(red: 0.31, green: 0.84, blue: 0.55)
+        case .openCode: Color(red: 0.96, green: 0.78, blue: 0.28)
+        case .kimi: Color(red: 0.57, green: 0.75, blue: 1.0)
+        case .other: Color.gray
         }
     }
 }

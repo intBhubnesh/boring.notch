@@ -44,41 +44,41 @@ enum AgentHookInstallerError: Error, LocalizedError {
 struct AgentHookInstaller {
     private let fileManager = FileManager.default
 
-    func status(for tool: String) throws -> AgentHookStatus {
+    func status(for tool: String, configRootPath: String) throws -> AgentHookStatus {
         switch normalizedTool(tool) {
         case "codex":
-            return try codexStatus()
+            return try codexStatus(configRootPath: configRootPath)
         case "claude":
-            return try claudeStatus()
+            return try claudeStatus(configRootPath: configRootPath)
         default:
             throw AgentHookInstallerError.unsupportedTool
         }
     }
 
-    func install(tool: String, hookBinarySourcePath: String) throws -> AgentHookStatus {
+    func install(tool: String, hookBinarySourcePath: String, configRootPath: String) throws -> AgentHookStatus {
         switch normalizedTool(tool) {
         case "codex":
-            return try installCodex(hookBinarySourcePath: hookBinarySourcePath)
+            return try installCodex(hookBinarySourcePath: hookBinarySourcePath, configRootPath: configRootPath)
         case "claude":
-            return try installClaude(hookBinarySourcePath: hookBinarySourcePath)
+            return try installClaude(hookBinarySourcePath: hookBinarySourcePath, configRootPath: configRootPath)
         default:
             throw AgentHookInstallerError.unsupportedTool
         }
     }
 
-    func uninstall(tool: String) throws -> AgentHookStatus {
+    func uninstall(tool: String, configRootPath: String) throws -> AgentHookStatus {
         switch normalizedTool(tool) {
         case "codex":
-            return try uninstallCodex()
+            return try uninstallCodex(configRootPath: configRootPath)
         case "claude":
-            return try uninstallClaude()
+            return try uninstallClaude(configRootPath: configRootPath)
         default:
             throw AgentHookInstallerError.unsupportedTool
         }
     }
 
-    private func codexStatus() throws -> AgentHookStatus {
-        let directory = home(".codex")
+    private func codexStatus(configRootPath: String) throws -> AgentHookStatus {
+        let directory = codexDirectory(configRootPath: configRootPath)
         let configURL = directory.appendingPathComponent("config.toml")
         let hooksURL = directory.appendingPathComponent("hooks.json")
         let manifest = loadManifest(directory.appendingPathComponent("boring-notch-hooks-install.json"))
@@ -92,14 +92,19 @@ struct AgentHookInstaller {
             return AgentHookStatus(state: "installed", detail: "Installed. Run /hooks in Codex if it asks for trust review.", configPath: directory.path, hookBinaryPath: binaryURL?.path)
         }
         if installed || featureEnabled || manifest != nil {
-            return AgentHookStatus(state: "needsAttention", detail: "Partial install. Reinstall hooks to repair the binary/config.", configPath: directory.path, hookBinaryPath: binaryURL?.path)
+            let missing = missingParts([
+                ("hook config", installed),
+                ("hooks feature flag", featureEnabled),
+                ("helper binary", binaryOK),
+            ])
+            return AgentHookStatus(state: "needsAttention", detail: "Needs repair: \(missing).", configPath: directory.path, hookBinaryPath: binaryURL?.path)
         }
         return AgentHookStatus(state: "notInstalled", detail: "Not installed", configPath: directory.path, hookBinaryPath: nil)
     }
 
-    private func claudeStatus() throws -> AgentHookStatus {
-        let directory = home(".claude")
-        let settingsURL = directory.appendingPathComponent("settings.json")
+    private func claudeStatus(configRootPath: String) throws -> AgentHookStatus {
+        let settingsURL = claudeSettingsURL(configRootPath: configRootPath)
+        let directory = settingsURL.deletingLastPathComponent()
         let manifest = loadManifest(directory.appendingPathComponent("boring-notch-claude-hooks-install.json"))
         let command = manifest?.hookCommand
         let installed = containsManagedHook(in: try? Data(contentsOf: settingsURL), managedCommand: command)
@@ -110,14 +115,18 @@ struct AgentHookInstaller {
             return AgentHookStatus(state: "installed", detail: "Installed", configPath: settingsURL.path, hookBinaryPath: binaryURL?.path)
         }
         if installed || manifest != nil {
-            return AgentHookStatus(state: "needsAttention", detail: "Partial install. Reinstall hooks to repair the binary/config.", configPath: settingsURL.path, hookBinaryPath: binaryURL?.path)
+            let missing = missingParts([
+                ("hook config", installed),
+                ("helper binary", binaryOK),
+            ])
+            return AgentHookStatus(state: "needsAttention", detail: "Needs repair: \(missing).", configPath: settingsURL.path, hookBinaryPath: binaryURL?.path)
         }
         return AgentHookStatus(state: "notInstalled", detail: "Not installed", configPath: settingsURL.path, hookBinaryPath: nil)
     }
 
-    private func installCodex(hookBinarySourcePath: String) throws -> AgentHookStatus {
+    private func installCodex(hookBinarySourcePath: String, configRootPath: String) throws -> AgentHookStatus {
         let binaryURL = try installHookBinary(from: hookBinarySourcePath)
-        let directory = home(".codex")
+        let directory = codexDirectory(configRootPath: configRootPath)
         try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
 
         let configURL = directory.appendingPathComponent("config.toml")
@@ -146,11 +155,11 @@ struct AgentHookInstaller {
         try backupIfNeeded(hooksURL)
         try newHooks.write(to: hooksURL, options: .atomic)
         try saveManifest(AgentHookManifest(hookCommand: command, hookBinaryPath: binaryURL.path), to: directory.appendingPathComponent("boring-notch-hooks-install.json"))
-        return try codexStatus()
+        return try codexStatus(configRootPath: configRootPath)
     }
 
-    private func uninstallCodex() throws -> AgentHookStatus {
-        let directory = home(".codex")
+    private func uninstallCodex(configRootPath: String) throws -> AgentHookStatus {
+        let directory = codexDirectory(configRootPath: configRootPath)
         let hooksURL = directory.appendingPathComponent("hooks.json")
         let manifestURL = directory.appendingPathComponent("boring-notch-hooks-install.json")
         let manifest = loadManifest(manifestURL)
@@ -168,15 +177,15 @@ struct AgentHookInstaller {
         if fileManager.fileExists(atPath: manifestURL.path) {
             try fileManager.removeItem(at: manifestURL)
         }
-        return try codexStatus()
+        return try codexStatus(configRootPath: configRootPath)
     }
 
-    private func installClaude(hookBinarySourcePath: String) throws -> AgentHookStatus {
+    private func installClaude(hookBinarySourcePath: String, configRootPath: String) throws -> AgentHookStatus {
         let binaryURL = try installHookBinary(from: hookBinarySourcePath)
-        let directory = home(".claude")
+        let settingsURL = claudeSettingsURL(configRootPath: configRootPath)
+        let directory = settingsURL.deletingLastPathComponent()
         try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
 
-        let settingsURL = directory.appendingPathComponent("settings.json")
         let command = "\(shellQuote(binaryURL.path)) --source claude"
         let specs = [
             HookSpec(name: "UserPromptSubmit", matcher: nil, timeout: nil),
@@ -198,12 +207,12 @@ struct AgentHookInstaller {
         try backupIfNeeded(settingsURL)
         try newSettings.write(to: settingsURL, options: .atomic)
         try saveManifest(AgentHookManifest(hookCommand: command, hookBinaryPath: binaryURL.path), to: directory.appendingPathComponent("boring-notch-claude-hooks-install.json"))
-        return try claudeStatus()
+        return try claudeStatus(configRootPath: configRootPath)
     }
 
-    private func uninstallClaude() throws -> AgentHookStatus {
-        let directory = home(".claude")
-        let settingsURL = directory.appendingPathComponent("settings.json")
+    private func uninstallClaude(configRootPath: String) throws -> AgentHookStatus {
+        let settingsURL = claudeSettingsURL(configRootPath: configRootPath)
+        let directory = settingsURL.deletingLastPathComponent()
         let manifestURL = directory.appendingPathComponent("boring-notch-claude-hooks-install.json")
         let manifest = loadManifest(manifestURL)
         let mutation = try uninstallJSONHooks(
@@ -224,7 +233,7 @@ struct AgentHookInstaller {
         if fileManager.fileExists(atPath: manifestURL.path) {
             try fileManager.removeItem(at: manifestURL)
         }
-        return try claudeStatus()
+        return try claudeStatus(configRootPath: configRootPath)
     }
 
     private func installHookBinary(from sourcePath: String) throws -> URL {
@@ -291,7 +300,13 @@ struct AgentHookInstaller {
 
     private func jsonRoot(_ data: Data?) throws -> [String: Any] {
         guard let data else { return [:] }
-        let object = try JSONSerialization.jsonObject(with: data)
+        let parseData: Data
+        if let contents = String(data: data, encoding: .utf8) {
+            parseData = Data(stripJSONComments(contents).utf8)
+        } else {
+            parseData = data
+        }
+        let object = try JSONSerialization.jsonObject(with: parseData)
         guard let root = object as? [String: Any] else {
             throw AgentHookInstallerError.invalidJSON(URL(fileURLWithPath: "config"))
         }
@@ -427,9 +442,106 @@ struct AgentHookInstaller {
         return try? decoder.decode(AgentHookManifest.self, from: data)
     }
 
+    private func codexDirectory(configRootPath: String) -> URL {
+        configuredURL(configRootPath, fallback: ".codex")
+    }
+
+    private func claudeSettingsURL(configRootPath: String) -> URL {
+        let configured = configRootPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !configured.isEmpty else {
+            return home(".claude/settings.json")
+        }
+        let url = expandedURL(configured)
+        if ["json", "jsonc"].contains(url.pathExtension.lowercased()) {
+            return url
+        }
+        return url.appendingPathComponent("settings.json")
+    }
+
+    private func configuredURL(_ path: String, fallback: String) -> URL {
+        let configured = path.trimmingCharacters(in: .whitespacesAndNewlines)
+        return configured.isEmpty ? home(fallback) : expandedURL(configured)
+    }
+
+    private func expandedURL(_ path: String) -> URL {
+        let expanded = (path as NSString).expandingTildeInPath
+        if expanded.hasPrefix("/") {
+            return URL(fileURLWithPath: expanded)
+        }
+        return home(expanded)
+    }
+
     private func home(_ path: String) -> URL {
         let homePath = NSHomeDirectoryForUser(NSUserName()) ?? fileManager.homeDirectoryForCurrentUser.path
         return URL(fileURLWithPath: homePath).appendingPathComponent(path)
+    }
+
+    private func missingParts(_ checks: [(String, Bool)]) -> String {
+        let missing = checks.compactMap { name, isPresent in isPresent ? nil : name }
+        return missing.isEmpty ? "unknown drift" : missing.joined(separator: ", ")
+    }
+
+    private func stripJSONComments(_ input: String) -> String {
+        var output = ""
+        var index = input.startIndex
+        var isInString = false
+        var isEscaped = false
+
+        while index < input.endIndex {
+            let character = input[index]
+
+            if isInString {
+                output.append(character)
+                if isEscaped {
+                    isEscaped = false
+                } else if character == "\\" {
+                    isEscaped = true
+                } else if character == "\"" {
+                    isInString = false
+                }
+                index = input.index(after: index)
+                continue
+            }
+
+            if character == "\"" {
+                isInString = true
+                output.append(character)
+                index = input.index(after: index)
+                continue
+            }
+
+            if character == "/" {
+                let nextIndex = input.index(after: index)
+                if nextIndex < input.endIndex {
+                    let next = input[nextIndex]
+                    if next == "/" {
+                        index = input.index(after: nextIndex)
+                        while index < input.endIndex, input[index] != "\n" {
+                            index = input.index(after: index)
+                        }
+                        continue
+                    }
+                    if next == "*" {
+                        index = input.index(after: nextIndex)
+                        while index < input.endIndex {
+                            let current = input[index]
+                            let afterCurrent = input.index(after: index)
+                            if current == "*", afterCurrent < input.endIndex, input[afterCurrent] == "/" {
+                                index = input.index(after: afterCurrent)
+                                break
+                            }
+                            index = afterCurrent
+                        }
+                        continue
+                    }
+                }
+            }
+
+            output.append(character)
+            index = input.index(after: index)
+        }
+
+        return output
     }
 
     private func shellQuote(_ string: String) -> String {

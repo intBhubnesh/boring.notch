@@ -6,6 +6,7 @@
 //
 
 import AVFoundation
+import AppKit
 import Defaults
 import EventKit
 import KeyboardShortcuts
@@ -391,6 +392,8 @@ struct AgentActivitySettings: View {
     @ObservedObject var coordinator = BoringViewCoordinator.shared
     @ObservedObject var agentActivityManager = AgentActivityManager.shared
     @ObservedObject var hookInstallationManager = AgentHookInstallationManager.shared
+    @AppStorage("agentActivityCodexConfigPath") private var codexConfigPath = ""
+    @AppStorage("agentActivityClaudeConfigPath") private var claudeConfigPath = ""
 
     var body: some View {
         Form {
@@ -412,6 +415,20 @@ struct AgentActivitySettings: View {
                 Text("Notch Behavior")
             }
             .disabled(!coordinator.agentActivityEnabled)
+
+            Section {
+                TextField("Codex config directory", text: $codexConfigPath)
+                    .textFieldStyle(.roundedBorder)
+                    .onSubmit { hookInstallationManager.refresh() }
+                TextField("Claude settings directory or file", text: $claudeConfigPath)
+                    .textFieldStyle(.roundedBorder)
+                    .onSubmit { hookInstallationManager.refresh() }
+            } header: {
+                Text("Config Paths")
+            } footer: {
+                Text("Leave empty for ~/.codex and ~/.claude/settings.json. Claude also accepts a direct settings.json or settings.jsonc path.")
+            }
+            .disabled(!coordinator.agentActivityEnabled || hookInstallationManager.isWorking)
 
             Section {
                 agentHookRow(
@@ -444,6 +461,27 @@ struct AgentActivitySettings: View {
             .disabled(hookInstallationManager.isWorking)
 
             Section {
+                ForEach(hookInstallationManager.health.statusLines, id: \.self) { line in
+                    Text(line)
+                        .font(.caption.monospaced())
+                        .foregroundStyle(.secondary)
+                }
+                if let checkedAt = hookInstallationManager.health.checkedAt {
+                    Text("Last checked: \(checkedAt.formatted(date: .omitted, time: .standard))")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
+                Button("Refresh health") {
+                    hookInstallationManager.refreshHealth()
+                }
+            } header: {
+                Text("Health")
+            } footer: {
+                Text("Use this when agents do not appear. The bridge socket must be available, the hook helper must exist, and running agents should be detected within a few seconds.")
+            }
+            .disabled(!coordinator.agentActivityEnabled)
+
+            Section {
                 Button("Start demo session") {
                     agentActivityManager.startDemoSession()
                 }
@@ -464,6 +502,12 @@ struct AgentActivitySettings: View {
             .disabled(!coordinator.agentActivityEnabled)
         }
         .onAppear {
+            hookInstallationManager.refresh()
+        }
+        .onChange(of: codexConfigPath) { _, _ in
+            hookInstallationManager.refresh()
+        }
+        .onChange(of: claudeConfigPath) { _, _ in
             hookInstallationManager.refresh()
         }
         .accentColor(.effectiveAccent)
@@ -501,8 +545,12 @@ struct AgentActivitySettings: View {
             }
 
             HStack {
-                Button("Install") {
-                    hookInstallationManager.install(tool)
+                Button(status.state == .needsAttention ? "Repair" : "Install") {
+                    if status.state == .needsAttention {
+                        hookInstallationManager.repair(tool)
+                    } else {
+                        hookInstallationManager.install(tool)
+                    }
                 }
                 .disabled(status.state == .installed)
 
@@ -510,6 +558,14 @@ struct AgentActivitySettings: View {
                     hookInstallationManager.uninstall(tool)
                 }
                 .disabled(status.state == .notInstalled)
+
+                if tool == .codex, status.state == .installed {
+                    Button("Copy /hooks") {
+                        NSPasteboard.general.clearContents()
+                        NSPasteboard.general.setString("/hooks", forType: .string)
+                    }
+                    .help("Copy the Codex trust-review command.")
+                }
             }
             .controlSize(.small)
         }

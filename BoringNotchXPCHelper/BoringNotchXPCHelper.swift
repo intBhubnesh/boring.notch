@@ -141,9 +141,9 @@ class BoringNotchXPCHelper: NSObject, BoringNotchXPCHelperProtocol {
 
     // MARK: - Agent Hook Installation
 
-    @objc func agentHookStatus(forTool tool: String, with reply: @escaping (String?) -> Void) {
+    @objc func agentHookStatus(forTool tool: String, configRootPath: String, with reply: @escaping (String?) -> Void) {
         do {
-            let status = try AgentHookInstaller().status(for: tool)
+            let status = try AgentHookInstaller().status(for: tool, configRootPath: configRootPath)
             reply(try successString(status.xpcDictionary))
         } catch {
             reply(failureString(error))
@@ -153,19 +153,24 @@ class BoringNotchXPCHelper: NSObject, BoringNotchXPCHelperProtocol {
     @objc func installAgentHooks(
         forTool tool: String,
         hookBinarySourcePath: String,
+        configRootPath: String,
         with reply: @escaping (String?) -> Void
     ) {
         do {
-            let status = try AgentHookInstaller().install(tool: tool, hookBinarySourcePath: hookBinarySourcePath)
+            let status = try AgentHookInstaller().install(
+                tool: tool,
+                hookBinarySourcePath: hookBinarySourcePath,
+                configRootPath: configRootPath
+            )
             reply(try successString(status.xpcDictionary))
         } catch {
             reply(failureString(error))
         }
     }
 
-    @objc func uninstallAgentHooks(forTool tool: String, with reply: @escaping (String?) -> Void) {
+    @objc func uninstallAgentHooks(forTool tool: String, configRootPath: String, with reply: @escaping (String?) -> Void) {
         do {
-            let status = try AgentHookInstaller().uninstall(tool: tool)
+            let status = try AgentHookInstaller().uninstall(tool: tool, configRootPath: configRootPath)
             reply(try successString(status.xpcDictionary))
         } catch {
             reply(failureString(error))

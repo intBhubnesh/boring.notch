@@ -248,8 +248,9 @@ final class XPCHelperClient: NSObject {
         let service = await MainActor.run {
             ensureRemoteService()
         }
+        let configRootPath = agentConfigRootPath(for: tool)
         let result: Result<AgentHookStatus, Error> = try await service.withContinuation { service, continuation in
-            service.agentHookStatus(forTool: tool) { status in
+            service.agentHookStatus(forTool: tool, configRootPath: configRootPath) { status in
                 continuation.resume(returning: Self.agentHookResult(status: status))
             }
         }
@@ -263,8 +264,9 @@ final class XPCHelperClient: NSObject {
         let sourcePath = Bundle.main.bundleURL
             .appendingPathComponent("Contents/Helpers/BoringNotchAgentHooks")
             .path
+        let configRootPath = agentConfigRootPath(for: tool)
         let result: Result<AgentHookStatus, Error> = try await service.withContinuation { service, continuation in
-            service.installAgentHooks(forTool: tool, hookBinarySourcePath: sourcePath) { status in
+            service.installAgentHooks(forTool: tool, hookBinarySourcePath: sourcePath, configRootPath: configRootPath) { status in
                 continuation.resume(returning: Self.agentHookResult(status: status))
             }
         }
@@ -275,8 +277,9 @@ final class XPCHelperClient: NSObject {
         let service = await MainActor.run {
             ensureRemoteService()
         }
+        let configRootPath = agentConfigRootPath(for: tool)
         let result: Result<AgentHookStatus, Error> = try await service.withContinuation { service, continuation in
-            service.uninstallAgentHooks(forTool: tool) { status in
+            service.uninstallAgentHooks(forTool: tool, configRootPath: configRootPath) { status in
                 continuation.resume(returning: Self.agentHookResult(status: status))
             }
         }
@@ -326,6 +329,14 @@ final class XPCHelperClient: NSObject {
             return envelope["payload"]
         }
         return nil
+    }
+
+    private nonisolated func agentConfigRootPath(for tool: String) -> String {
+        let key = tool.lowercased().contains("claude")
+            ? "agentActivityClaudeConfigPath"
+            : "agentActivityCodexConfigPath"
+        return UserDefaults.standard.string(forKey: key)?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
     }
 }
 

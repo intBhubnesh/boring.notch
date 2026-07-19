@@ -20,6 +20,25 @@ struct AgentHookStatus: Codable, Sendable, Hashable {
     var hookBinaryPath: String?
 }
 
+struct AgentActivityHealthSnapshot: Sendable, Hashable {
+    var bridgeSocketExists: Bool = false
+    var bundledHookHelperExists: Bool = false
+    var installedCodexHookHelperExists: Bool = false
+    var installedClaudeHookHelperExists: Bool = false
+    var runningProcessCount: Int = 0
+    var checkedAt: Date?
+
+    var statusLines: [String] {
+        [
+            "Bridge socket: \(bridgeSocketExists ? "available" : "missing")",
+            "Bundled hook helper: \(bundledHookHelperExists ? "available" : "missing")",
+            "Codex installed helper: \(installedCodexHookHelperExists ? "available" : "missing")",
+            "Claude installed helper: \(installedClaudeHookHelperExists ? "available" : "missing")",
+            "Detected running agents: \(runningProcessCount)",
+        ]
+    }
+}
+
 @MainActor
 final class AgentHookInstallationManager: ObservableObject {
     static let shared = AgentHookInstallationManager()
@@ -35,6 +54,7 @@ final class AgentHookInstallationManager: ObservableObject {
         configPath: "~/.claude"
     )
     @Published private(set) var isWorking = false
+    @Published private(set) var health = AgentActivityHealthSnapshot()
     @Published var lastError: String?
 
     private var activeOperationID: UUID?
@@ -45,6 +65,7 @@ final class AgentHookInstallationManager: ObservableObject {
         Task { @MainActor in
             do {
                 try await refreshStatuses()
+                await refreshHealthStatus()
                 lastError = nil
             } catch {
                 lastError = error.localizedDescription
@@ -75,6 +96,16 @@ final class AgentHookInstallationManager: ObservableObject {
             case .cursor, .gemini, .openCode, .kimi, .other:
                 throw AgentHookInstallerError.unsupportedTool
             }
+        }
+    }
+
+    func repair(_ tool: AgentTool) {
+        install(tool)
+    }
+
+    func refreshHealth() {
+        Task { @MainActor in
+            await refreshHealthStatus()
         }
     }
 
@@ -118,6 +149,23 @@ final class AgentHookInstallationManager: ObservableObject {
         async let claude = XPCHelperClient.shared.agentHookStatus(for: "claude")
         codexStatus = try await codex
         claudeStatus = try await claude
+    }
+
+    private func refreshHealthStatus() async {
+        let fileManager = FileManager.default
+        let bundledHookPath = Bundle.main.bundleURL
+            .appendingPathComponent("Contents/Helpers/BoringNotchAgentHooks")
+            .path
+
+        let snapshots = (try? await XPCHelperClient.shared.runningAgentProcesses()) ?? []
+        health = AgentActivityHealthSnapshot(
+            bridgeSocketExists: fileManager.fileExists(atPath: AgentBridgeTransport.socketPath),
+            bundledHookHelperExists: fileManager.isExecutableFile(atPath: bundledHookPath),
+            installedCodexHookHelperExists: codexStatus.hookBinaryPath.map { fileManager.isExecutableFile(atPath: $0) } ?? false,
+            installedClaudeHookHelperExists: claudeStatus.hookBinaryPath.map { fileManager.isExecutableFile(atPath: $0) } ?? false,
+            runningProcessCount: snapshots.count,
+            checkedAt: Date()
+        )
     }
 }
 

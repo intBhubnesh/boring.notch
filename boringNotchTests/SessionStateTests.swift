@@ -136,7 +136,8 @@ final class SessionStateTests: XCTestCase {
             executablePath: "/Users/mint/.vscode/extensions/anthropic.claude-code/resources/native-binary/claude",
             commandLine: "claude --output-format stream-json",
             parentExecutablePath: nil,
-            cwd: nil,
+            cwd: "/Users/mint/Code/boring.notch",
+            hostApplication: "VS Code",
             observedAt: date(0)
         )
 
@@ -144,8 +145,10 @@ final class SessionStateTests: XCTestCase {
 
         XCTAssertEqual(state.runningCount, 1)
         XCTAssertEqual(state.sessions[snapshot.sessionID]?.tool, .claudeCode)
+        XCTAssertEqual(state.sessions[snapshot.sessionID]?.title, "boring.notch")
+        XCTAssertEqual(state.sessions[snapshot.sessionID]?.hostApplication, "VS Code")
         XCTAssertEqual(state.sessions[snapshot.sessionID]?.phase, .running)
-        XCTAssertEqual(state.sessions[snapshot.sessionID]?.summary, "Detected from VS Code")
+        XCTAssertEqual(state.sessions[snapshot.sessionID]?.summary, "Idle in boring.notch")
 
         state.reconcileProcessSnapshots([], at: date(2))
 

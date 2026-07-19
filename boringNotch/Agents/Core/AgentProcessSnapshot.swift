@@ -13,6 +13,7 @@ struct AgentProcessSnapshot: Sendable, Hashable {
     var commandLine: String
     var parentExecutablePath: String?
     var cwd: String?
+    var hostApplication: String? = nil
     var observedAt: Date
 
     var sessionID: String {
@@ -20,20 +21,35 @@ struct AgentProcessSnapshot: Sendable, Hashable {
     }
 
     var title: String {
-        "\(tool.displayName) #\(pid)"
+        let folder = cwd.flatMap(Self.folderName)
+        if let folder, !folder.isEmpty {
+            return folder
+        }
+        if let resumeID = Self.resumeID(in: commandLine) {
+            return "\(tool.displayName) \(resumeID)"
+        }
+        return "\(tool.displayName) #\(pid)"
     }
 
     var summary: String {
-        let host: String
-        let haystack = "\(executablePath) \(commandLine) \(parentExecutablePath ?? "")".lowercased()
-        if haystack.contains(".vscode/extensions") || haystack.contains("visual studio code") {
-            host = "VS Code"
-        } else if haystack.contains("/terminal.app/") || haystack.contains("/iterm.app/") || haystack.contains("/warp.app/") {
-            host = "terminal"
-        } else {
-            host = "process list"
+        if let folder = cwd.flatMap(Self.folderName), !folder.isEmpty {
+            return "Idle in \(folder)"
         }
-        return "Detected from \(host)"
+        return "Idle"
+    }
+
+    private static func folderName(_ path: String) -> String? {
+        let expandedPath = (path as NSString).expandingTildeInPath
+        let lastComponent = URL(fileURLWithPath: expandedPath).lastPathComponent
+        return lastComponent.isEmpty ? nil : lastComponent
+    }
+
+    private static func resumeID(in commandLine: String) -> String? {
+        guard let range = commandLine.range(of: "--resume=") else { return nil }
+        let suffix = commandLine[range.upperBound...]
+        let id = suffix.prefix { !$0.isWhitespace }
+        guard id.count >= 8 else { return nil }
+        return String(id.prefix(8))
     }
 }
 
@@ -56,6 +72,7 @@ extension AgentProcessSnapshot {
             commandLine: commandLine,
             parentExecutablePath: xpcDictionary["parentExecutablePath"] as? String,
             cwd: xpcDictionary["cwd"] as? String,
+            hostApplication: xpcDictionary["hostApplication"] as? String,
             observedAt: observedAt
         )
     }
