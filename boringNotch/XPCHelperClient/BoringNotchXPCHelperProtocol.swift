@@ -25,4 +25,5 @@ import Foundation
     func installAgentHooks(forTool tool: String, hookBinarySourcePath: String, configRootPath: String, with reply: @escaping (String?) -> Void)
     func uninstallAgentHooks(forTool tool: String, configRootPath: String, with reply: @escaping (String?) -> Void)
     func runningAgentProcesses(with reply: @escaping (String?) -> Void)
+    func terminateAgentProcess(_ pid: Int, with reply: @escaping (String?) -> Void)
 }

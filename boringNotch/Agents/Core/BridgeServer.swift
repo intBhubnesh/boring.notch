@@ -17,6 +17,7 @@ final class BridgeServer: @unchecked Sendable {
         let requestID: String?
         let questionID: String?
         let style: AgentBridgeResponseStyle
+        let responseContext: String?
     }
 
     private let socketPath: String
@@ -127,7 +128,11 @@ final class BridgeServer: @unchecked Sendable {
                 return
             }
 
-            let response = AgentBridgeResponse(stdout: Self.stdout(for: response, style: pending.style))
+            let response = AgentBridgeResponse(stdout: Self.stdout(
+                for: response,
+                style: pending.style,
+                responseContext: pending.responseContext
+            ))
             self.send(response, to: pending.clientFD)
             close(pending.clientFD)
         }
@@ -217,7 +222,8 @@ final class BridgeServer: @unchecked Sendable {
                 messageID: message.id,
                 requestID: requestID,
                 questionID: nil,
-                style: style
+                style: style,
+                responseContext: message.responseContext
             )
         case .questionAsked:
             guard let questionID = message.event.questionPrompt?.id else { return nil }
@@ -226,7 +232,8 @@ final class BridgeServer: @unchecked Sendable {
                 messageID: message.id,
                 requestID: nil,
                 questionID: questionID,
-                style: style
+                style: style,
+                responseContext: message.responseContext
             )
         default:
             return nil
@@ -250,15 +257,23 @@ final class BridgeServer: @unchecked Sendable {
         switch style {
         case .codexPermissionRequest:
             return codexPermissionStdout(resolution: resolution)
-        case .claudePermissionRequest, .claudeQuestion:
+        case .claudePermissionRequest, .claudeQuestion, .claudePreToolUseQuestion, .claudePreToolUsePlan:
             return claudePermissionStdout(resolution: resolution)
         }
     }
 
-    private static func stdout(for response: QuestionPromptResponse, style: AgentBridgeResponseStyle) -> String? {
+    private static func stdout(
+        for response: QuestionPromptResponse,
+        style: AgentBridgeResponseStyle,
+        responseContext: String?
+    ) -> String? {
         switch style {
         case .claudeQuestion:
             return claudeQuestionStdout(response: response)
+        case .claudePreToolUseQuestion:
+            return claudePreToolUseQuestionStdout(response: response, responseContext: responseContext)
+        case .claudePreToolUsePlan:
+            return claudePreToolUsePlanStdout(response: response, responseContext: responseContext)
         case .codexPermissionRequest, .claudePermissionRequest:
             return nil
         }
@@ -313,6 +328,76 @@ final class BridgeServer: @unchecked Sendable {
                 ],
             ],
         ])
+    }
+
+    private static func claudePreToolUseQuestionStdout(response: QuestionPromptResponse, responseContext: String?) -> String {
+        let toolInput = responseContext.flatMap(Self.toolInput(from:)) ?? [:]
+        let answerParts = response.selectedOptionIDs + [response.freeformText].compactMap { $0 }
+        let answer = answerParts.joined(separator: ", ")
+        var updatedInput = toolInput
+        updatedInput["answers"] = answersObject(for: toolInput, fallbackAnswer: answer)
+
+        return preToolUseStdout(permissionDecision: "allow", updatedInput: updatedInput)
+    }
+
+    private static func claudePreToolUsePlanStdout(response: QuestionPromptResponse, responseContext: String?) -> String {
+        let selected = Set(response.selectedOptionIDs.map { $0.lowercased() })
+        if selected.contains("reject") || selected.contains("deny") {
+            return preToolUseStdout(
+                permissionDecision: "deny",
+                permissionDecisionReason: response.freeformText ?? "Plan rejected in Boring Notch.",
+                updatedInput: nil
+            )
+        }
+
+        return preToolUseStdout(
+            permissionDecision: "allow",
+            updatedInput: responseContext.flatMap(Self.toolInput(from:)) ?? [:]
+        )
+    }
+
+    private static func preToolUseStdout(
+        permissionDecision: String,
+        permissionDecisionReason: String? = nil,
+        updatedInput: [String: Any]?
+    ) -> String {
+        var output: [String: Any] = [
+            "hookEventName": "PreToolUse",
+            "permissionDecision": permissionDecision,
+        ]
+        if let permissionDecisionReason {
+            output["permissionDecisionReason"] = permissionDecisionReason
+        }
+        if let updatedInput {
+            output["updatedInput"] = updatedInput
+        }
+        return jsonLine([
+            "continue": true,
+            "suppressOutput": true,
+            "hookSpecificOutput": output,
+        ])
+    }
+
+    private static func toolInput(from responseContext: String) -> [String: Any]? {
+        guard let data = responseContext.data(using: .utf8),
+              let object = try? JSONSerialization.jsonObject(with: data),
+              let context = object as? [String: Any] else {
+            return nil
+        }
+        return context["toolInput"] as? [String: Any]
+    }
+
+    private static func answersObject(for toolInput: [String: Any], fallbackAnswer: String) -> [String: Any] {
+        guard let questions = toolInput["questions"] as? [[String: Any]], !questions.isEmpty else {
+            return ["answer": fallbackAnswer]
+        }
+
+        var answers: [String: Any] = [:]
+        for question in questions {
+            guard let questionText = question["question"] as? String, !questionText.isEmpty else { continue }
+            answers[questionText] = fallbackAnswer
+        }
+        return answers
     }
 
     private static func jsonLine(_ object: [String: Any]) -> String {

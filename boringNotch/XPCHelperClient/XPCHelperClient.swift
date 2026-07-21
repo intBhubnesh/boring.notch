@@ -303,6 +303,20 @@ final class XPCHelperClient: NSObject {
         return try result.get()
     }
 
+    nonisolated func terminateAgentProcess(pid: Int) async throws -> Bool {
+        let service = await MainActor.run {
+            ensureRemoteService()
+        }
+        let result: Result<Bool, Error> = try await service.withContinuation { service, continuation in
+            service.terminateAgentProcess(pid) { data in
+                let object = Self.agentPayloadObject(data: data)
+                let terminated = (object as? [String: Any])?["terminated"] as? Bool ?? false
+                continuation.resume(returning: .success(terminated))
+            }
+        }
+        return try result.get()
+    }
+
     nonisolated func resetConnection() {
         Task { @MainActor in
             connection?.invalidate()

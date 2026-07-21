@@ -307,12 +307,21 @@ private enum ClaudeHookAdapter {
                 ])
             ]
         case "pretooluse":
-            events = [
-                sessionStarted(sessionID: sessionID, cwd: cwd, at: now),
-                event(type: "statusUpdated", sessionID: sessionID, at: now, extra: [
-                    "summary": toolSummary(in: payload, fallback: "Using Claude Code tool")
-                ])
-            ]
+            if let prompt = preToolUsePrompt(in: payload, at: now) {
+                events = [
+                    sessionStarted(sessionID: sessionID, cwd: cwd, at: now),
+                    event(type: "questionAsked", sessionID: sessionID, at: now, extra: [
+                        "questionPrompt": prompt
+                    ])
+                ]
+            } else {
+                events = [
+                    sessionStarted(sessionID: sessionID, cwd: cwd, at: now),
+                    event(type: "statusUpdated", sessionID: sessionID, at: now, extra: [
+                        "summary": toolSummary(in: payload, fallback: "Using Claude Code tool")
+                    ])
+                ]
+            }
         case "posttooluse":
             events = [
                 sessionStarted(sessionID: sessionID, cwd: cwd, at: now),
@@ -366,7 +375,14 @@ private enum ClaudeHookAdapter {
                 case "permissionRequested":
                     return "claudePermissionRequest"
                 case "questionAsked":
-                    return "claudeQuestion"
+                    switch toolName(in: payload) {
+                    case "AskUserQuestion":
+                        return hookName == "pretooluse" ? "claudePreToolUseQuestion" : "claudeQuestion"
+                    case "ExitPlanMode":
+                        return "claudePreToolUsePlan"
+                    default:
+                        return "claudeQuestion"
+                    }
                 default:
                     return nil
                 }
@@ -376,7 +392,8 @@ private enum ClaudeHookAdapter {
                 "id": UUID().uuidString,
                 "event": event,
                 "expectsResponse": responseStyle != nil,
-                "responseStyle": responseStyle
+                "responseStyle": responseStyle,
+                "responseContext": responseStyle?.hasPrefix("claudePreToolUse") == true ? responseContext(in: payload) : nil
             ])
         }
     }
@@ -425,6 +442,30 @@ private enum ClaudeHookAdapter {
     private static func pathSummary(in payload: [String: Any]) -> String? {
         stringValue(in: payload, keys: ["cwd", "path", "file_path", "filePath"])
             ?? nestedStringValue(in: payload, containerKeys: ["tool_input", "toolInput", "input"], keys: ["path", "file_path", "filePath"])
+    }
+
+    private static func preToolUsePrompt(in payload: [String: Any], at now: String) -> [String: Any]? {
+        switch toolName(in: payload) {
+        case "AskUserQuestion":
+            return questionPrompt(in: payload, at: now)
+        case "ExitPlanMode":
+            let plan = toolInput(in: payload)?["plan"] as? String
+            let question = plan.map { "Accept this plan?\n\n\(summarize($0, fallback: "Plan ready for review"))" } ?? "Accept this plan?"
+            return [
+                "id": stringValue(in: payload, keys: ["tool_use_id", "toolUseID", "question_id", "questionID"]) ?? UUID().uuidString,
+                "title": "Claude Code plan",
+                "question": question,
+                "options": [
+                    ["id": "accept", "label": "Accept plan"],
+                    ["id": "reject", "label": "Reject plan"],
+                ],
+                "multiSelect": false,
+                "allowsFreeform": false,
+                "askedAt": now
+            ]
+        default:
+            return nil
+        }
     }
 
     private static func questionPrompt(in payload: [String: Any], at now: String) -> [String: Any]? {
@@ -492,6 +533,25 @@ private enum ClaudeHookAdapter {
         let questions = nestedArray(in: payload, containerKeys: ["tool_input", "toolInput", "input"], keys: ["questions"])
             ?? arrayValue(in: payload, keys: ["questions"])
         return questions?.first as? [String: Any]
+    }
+
+    private static func responseContext(in payload: [String: Any]) -> String? {
+        guard let toolInput = toolInput(in: payload) else { return nil }
+        let context: [String: Any] = [
+            "toolName": toolName(in: payload),
+            "toolInput": toolInput,
+        ]
+        guard JSONSerialization.isValidJSONObject(context),
+              let data = try? JSONSerialization.data(withJSONObject: context, options: [.sortedKeys]) else {
+            return nil
+        }
+        return String(data: data, encoding: .utf8)
+    }
+
+    private static func toolInput(in payload: [String: Any]) -> [String: Any]? {
+        payload["tool_input"] as? [String: Any]
+            ?? payload["toolInput"] as? [String: Any]
+            ?? payload["input"] as? [String: Any]
     }
 
     private static func summarize(_ value: String?, fallback: String) -> String {

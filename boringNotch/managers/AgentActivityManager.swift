@@ -90,6 +90,41 @@ final class AgentActivityManager: ObservableObject {
         bridgeServer?.answerQuestion(sessionID: sessionID, questionID: questionID, response: response)
     }
 
+    func closeSession(sessionID: String) {
+        guard let session = state.sessions[sessionID] else { return }
+
+        if let pid = session.pid {
+            Task {
+                do {
+                    let terminated = try await XPCHelperClient.shared.terminateAgentProcess(pid: pid)
+                    await MainActor.run {
+                        if terminated {
+                            self.state.removeSession(sessionID)
+                        } else {
+                            self.apply(.sessionFailed(
+                                sessionID: sessionID,
+                                reason: "Could not stop agent process #\(pid)",
+                                at: Date()
+                            ))
+                        }
+                    }
+                    await refreshRunningProcesses()
+                } catch {
+                    await MainActor.run {
+                        self.apply(.sessionFailed(
+                            sessionID: sessionID,
+                            reason: error.localizedDescription,
+                            at: Date()
+                        ))
+                    }
+                }
+            }
+            return
+        }
+
+        state.removeSession(sessionID)
+    }
+
     func refreshRunningProcesses() async {
         do {
             let snapshots = try await XPCHelperClient.shared.runningAgentProcesses()

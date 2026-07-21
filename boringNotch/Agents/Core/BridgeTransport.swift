@@ -52,12 +52,15 @@ struct AgentBridgeMessage: Codable, Sendable, Hashable, Identifiable {
     var event: AgentBridgeEvent
     var expectsResponse: Bool = false
     var responseStyle: AgentBridgeResponseStyle? = nil
+    var responseContext: String? = nil
 }
 
 enum AgentBridgeResponseStyle: String, Codable, Sendable, Hashable {
     case codexPermissionRequest
     case claudePermissionRequest
     case claudeQuestion
+    case claudePreToolUseQuestion
+    case claudePreToolUsePlan
 }
 
 struct AgentBridgeResponse: Codable, Sendable, Hashable {

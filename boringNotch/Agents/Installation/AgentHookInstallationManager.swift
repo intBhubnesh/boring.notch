@@ -327,7 +327,7 @@ struct AgentHookInstaller {
             HookSpec(name: "SubagentStart", matcher: nil, timeout: nil),
             HookSpec(name: "SubagentStop", matcher: nil, timeout: nil),
             HookSpec(name: "Notification", matcher: "*", timeout: nil),
-            HookSpec(name: "PreToolUse", matcher: "*", timeout: nil),
+            HookSpec(name: "PreToolUse", matcher: "*", timeout: 86_400),
             HookSpec(name: "PermissionRequest", matcher: "*", timeout: 86_400),
             HookSpec(name: "PostToolUse", matcher: "*", timeout: nil),
             HookSpec(name: "PostToolUseFailure", matcher: "*", timeout: nil),

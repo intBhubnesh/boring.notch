@@ -7,6 +7,7 @@
 
 import Foundation
 import ApplicationServices
+import Darwin
 import IOKit
 import CoreGraphics
 
@@ -186,6 +187,72 @@ class BoringNotchXPCHelper: NSObject, BoringNotchXPCHelperProtocol {
         }
     }
 
+    @objc func terminateAgentProcess(_ pid: Int, with reply: @escaping (String?) -> Void) {
+        DispatchQueue.global(qos: .userInitiated).async {
+            do {
+                let result = try self.terminateAgentProcess(pid)
+                reply(try self.successString(result))
+            } catch {
+                reply(self.failureString(error))
+            }
+        }
+    }
+
+    private func terminateAgentProcess(_ pid: Int) throws -> [String: Any] {
+        guard pid > 1 else { throw AgentProcessTerminationError.invalidPID }
+
+        let scanner = AgentProcessScanner()
+        let runningProcesses = try scanner.runningAgentProcesses()
+        guard runningProcesses.contains(where: { $0["pid"] as? Int == pid }) else {
+            return [
+                "pid": pid,
+                "terminated": true,
+                "alreadyExited": true,
+            ]
+        }
+
+        let processID = pid_t(pid)
+        guard Darwin.kill(processID, 0) == 0 else {
+            return [
+                "pid": pid,
+                "terminated": true,
+                "alreadyExited": true,
+            ]
+        }
+
+        if Darwin.kill(processID, SIGINT) != 0 {
+            throw POSIXError(.init(rawValue: errno) ?? .EIO)
+        }
+
+        if waitForExit(processID, attempts: 12) {
+            return [
+                "pid": pid,
+                "terminated": true,
+                "signal": "SIGINT",
+            ]
+        }
+
+        if Darwin.kill(processID, SIGTERM) != 0 {
+            throw POSIXError(.init(rawValue: errno) ?? .EIO)
+        }
+
+        return [
+            "pid": pid,
+            "terminated": waitForExit(processID, attempts: 12),
+            "signal": "SIGTERM",
+        ]
+    }
+
+    private func waitForExit(_ processID: pid_t, attempts: Int) -> Bool {
+        for _ in 0..<attempts {
+            usleep(100_000)
+            if Darwin.kill(processID, 0) != 0 {
+                return errno == ESRCH
+            }
+        }
+        return false
+    }
+
     private func successString(_ payload: Any) throws -> String? {
         try jsonString(["ok": true, "payload": payload])
     }
@@ -247,5 +314,16 @@ class BoringNotchXPCHelper: NSObject, BoringNotchXPCHelperProtocol {
             }
             return nil
         }()
+    }
+}
+
+private enum AgentProcessTerminationError: Error, LocalizedError {
+    case invalidPID
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidPID:
+            "Invalid agent process ID."
+        }
     }
 }
