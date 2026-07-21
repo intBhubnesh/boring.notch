@@ -82,6 +82,7 @@ Current Boring Notch state: Agent Activity settings are early: enable toggle, be
 - Added hook install/uninstall/status UI for Codex and Claude Code.
 - Added an unsandboxed XPC helper path for writing Codex and Claude hook config.
 - Added closed-notch passive agent indicators and auto-open behavior for actionable sessions.
+- Added click-to-jump: clicking a session row activates its host application, with exact-tab routing for Terminal.app and iTerm2 via a scriptable `tty` match.
 
 #### Fixed
 
@@ -115,12 +116,24 @@ Current Boring Notch state: Agent Activity settings are early: enable toggle, be
 
 ### P1: Jump-Back
 
-- Add a session host model: terminal app, IDE, workspace, tab, pane, process ID, cwd.
-- Implement click-to-jump for VS Code integrated terminals.
-- Implement click-to-jump for Cursor integrated terminals.
-- Implement terminal focus fallback for Terminal.app, iTerm, Warp, and Ghostty.
-- Add exact-pane routing where host APIs make it possible.
+- [Done] Add a session host model: process ID and tty (workspace/tab/pane beyond
+  that are still open — see below).
+- [Done] Implement terminal focus fallback for Terminal.app, iTerm, Warp,
+  Ghostty, and WezTerm (click a session row to activate the host app).
+- [Done] Add exact-pane routing where host APIs make it possible — Terminal.app
+  and iTerm2 both expose a scriptable `tty` per tab/session, so those two raise
+  the exact tab instead of just the app. See `AgentJumpService`.
+- [Done] Implement click-to-jump for VS Code integrated terminals: clicking a
+  session opens/raises the session workspace in VS Code and focuses the
+  integrated terminal through the command palette.
+- [Done] Implement click-to-jump for Cursor integrated terminals: clicking a
+  session opens/raises the session workspace in Cursor and focuses the
+  integrated terminal through the command palette.
+- Add exact-pane routing for tmux/Zellij.
 - Add session card actions: reveal, copy cwd, copy command, dismiss.
+- [Done] Unify hook-backed sessions with process-scanned sessions so hook sessions
+  (which don't go through the XPC process scanner) also get a
+  `hostApplication`/`pid`/`tty` and can jump.
 
 ### P2: Better Approval and Question Handling
 

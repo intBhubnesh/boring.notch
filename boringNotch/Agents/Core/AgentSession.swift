@@ -14,6 +14,8 @@ struct AgentSession: Codable, Sendable, Hashable, Identifiable {
     var title: String
     var cwd: String?
     var hostApplication: String?
+    var pid: Int?
+    var tty: String?
     var activeFilePath: String?
     var phase: SessionPhase
     var summary: String
@@ -28,6 +30,8 @@ struct AgentSession: Codable, Sendable, Hashable, Identifiable {
         case title
         case cwd
         case hostApplication
+        case pid
+        case tty
         case activeFilePath
         case phase
         case summary
@@ -43,6 +47,8 @@ struct AgentSession: Codable, Sendable, Hashable, Identifiable {
         title: String,
         cwd: String?,
         hostApplication: String? = nil,
+        pid: Int? = nil,
+        tty: String? = nil,
         activeFilePath: String? = nil,
         phase: SessionPhase,
         summary: String,
@@ -56,6 +62,8 @@ struct AgentSession: Codable, Sendable, Hashable, Identifiable {
         self.title = title
         self.cwd = cwd
         self.hostApplication = hostApplication
+        self.pid = pid
+        self.tty = tty
         self.activeFilePath = activeFilePath
         self.phase = phase
         self.summary = summary
@@ -72,6 +80,8 @@ struct AgentSession: Codable, Sendable, Hashable, Identifiable {
         title = try container.decode(String.self, forKey: .title)
         cwd = try container.decodeIfPresent(String.self, forKey: .cwd)
         hostApplication = try container.decodeIfPresent(String.self, forKey: .hostApplication)
+        pid = try container.decodeIfPresent(Int.self, forKey: .pid)
+        tty = try container.decodeIfPresent(String.self, forKey: .tty)
         activeFilePath = try container.decodeIfPresent(String.self, forKey: .activeFilePath)
         phase = try container.decode(SessionPhase.self, forKey: .phase)
         summary = try container.decode(String.self, forKey: .summary)

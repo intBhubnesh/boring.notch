@@ -22,6 +22,9 @@ struct AgentProcessScanner {
                 "commandLine": row.commandLine,
                 "hostApplication": hostApplication(for: row, ancestors: ancestors),
             ]
+            if let tty = row.tty {
+                dictionary["tty"] = tty
+            }
             if let parent {
                 dictionary["parentExecutablePath"] = parent.executablePath
                 dictionary["parentCommandLine"] = parent.commandLine
@@ -36,7 +39,7 @@ struct AgentProcessScanner {
     private func processRows() throws -> [ProcessRow] {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/bin/ps")
-        process.arguments = ["-axo", "pid=,ppid=,comm=,args=", "-ww"]
+        process.arguments = ["-axo", "pid=,ppid=,tty=,comm=,args=", "-ww"]
 
         let pipe = Pipe()
         process.standardOutput = pipe
@@ -171,13 +174,14 @@ struct AgentProcessScanner {
 private struct ProcessRow {
     var pid: Int
     var parentPID: Int
+    var tty: String?
     var executablePath: String
     var commandLine: String
 
     init?(line: String) {
         let parts = line.trimmingCharacters(in: .whitespacesAndNewlines)
-            .split(separator: " ", maxSplits: 3, omittingEmptySubsequences: true)
-        guard parts.count == 4,
+            .split(separator: " ", maxSplits: 4, omittingEmptySubsequences: true)
+        guard parts.count == 5,
               let pid = Int(parts[0]),
               let parentPID = Int(parts[1]) else {
             return nil
@@ -185,7 +189,15 @@ private struct ProcessRow {
 
         self.pid = pid
         self.parentPID = parentPID
-        self.executablePath = String(parts[2])
-        self.commandLine = String(parts[3])
+        self.tty = Self.devicePath(fromPsTTY: String(parts[2]))
+        self.executablePath = String(parts[3])
+        self.commandLine = String(parts[4])
+    }
+
+    private static func devicePath(fromPsTTY value: String) -> String? {
+        guard value != "??", !value.isEmpty else { return nil }
+        if value.hasPrefix("/dev/") { return value }
+        if value.hasPrefix("tty") { return "/dev/\(value)" }
+        return "/dev/tty\(value)"
     }
 }

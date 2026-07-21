@@ -8,16 +8,22 @@ import SwiftUI
 struct AgentSessionRow: View {
     let session: AgentSession
 
+    @EnvironmentObject var vm: BoringViewModel
+    @ObservedObject private var manager = AgentActivityManager.shared
+    @State private var isHoveringJumpTarget = false
+    @State private var jumpPermissionRequired = false
+    @State private var jumpPermissionMessage: String?
+
+    private var canJump: Bool {
+        session.hostApplication?.isEmpty == false
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .top, spacing: 10) {
-                agentIcon
+            jumpTarget
 
-                VStack(alignment: .leading, spacing: 4) {
-                    header
-                    contentLine
-                    contextLine
-                }
+            if jumpPermissionRequired {
+                jumpPermissionButton
             }
 
             if let permission = session.pendingPermission {
@@ -35,6 +41,170 @@ struct AgentSessionRow: View {
             RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .fill(rowBackground)
         )
+        .task(id: session.hostApplication) {
+            refreshJumpPermissionState()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .agentJumpPermissionRequired)) { notification in
+            guard notification.userInfo?["sessionID"] as? String == session.id else { return }
+            jumpPermissionMessage = notification.userInfo?["message"] as? String
+            jumpPermissionRequired = true
+        }
+    }
+
+    @ViewBuilder
+    private var jumpTarget: some View {
+        let info = HStack(alignment: .top, spacing: 10) {
+            agentIcon
+
+            VStack(alignment: .leading, spacing: 4) {
+                header
+                contentLine
+                contextLine
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
+
+        HStack(alignment: .top, spacing: 6) {
+            if canJump {
+                info
+                    .onHover { isHoveringJumpTarget = $0 }
+                    .onTapGesture {
+                        jumpToSession()
+                    }
+            } else {
+                info
+            }
+
+            if canJump {
+                iconButton("arrow.up.right", help: "Jump to agent") {
+                    jumpToSession()
+                }
+            }
+
+            iconButton("xmark.circle.fill", help: closeHelpText, role: .destructive) {
+                manager.closeSession(sessionID: session.id)
+            }
+        }
+        .contentShape(Rectangle())
+        .background(
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(isHoveringJumpTarget ? Color.white.opacity(0.05) : .clear)
+        )
+    }
+
+    private func iconButton(
+        _ systemName: String,
+        help: String,
+        role: ButtonRole? = nil,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(role: role, action: action) {
+            Image(systemName: systemName)
+                .font(.system(size: 11, weight: .semibold))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(role == .destructive ? .red.opacity(0.8) : .gray.opacity(0.75))
+                .frame(width: 22, height: 22)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(help)
+        .padding(.top, 1)
+    }
+
+    private func jumpToSession() {
+        if AgentJumpService.requiresJumpPermission(for: session),
+           !AgentJumpService.isAccessibilityTrusted() {
+            requestJumpPermission()
+            return
+        }
+
+        Task {
+            let didJump = await AgentJumpService.jumpAndReport(to: session)
+            await MainActor.run {
+                if didJump {
+                    jumpPermissionRequired = false
+                    jumpPermissionMessage = nil
+                    vm.close()
+                } else if AgentJumpService.requiresJumpPermission(for: session) {
+                    jumpPermissionRequired = true
+                }
+            }
+        }
+    }
+
+    private var jumpPermissionButton: some View {
+        HStack(spacing: 8) {
+            Button {
+                requestJumpPermission()
+            } label: {
+                Label("Grant Permission", systemImage: "lock.open.fill")
+                    .font(.caption.weight(.semibold))
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.small)
+            .tint(session.tool.accentColor)
+            .help(jumpPermissionHelp)
+
+            if jumpPermissionMessage != nil {
+                Button {
+                    AgentJumpService.openAutomationSettings()
+                } label: {
+                    Image(systemName: "gearshape.fill")
+                        .font(.system(size: 11, weight: .semibold))
+                        .frame(width: 22, height: 22)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.gray.opacity(0.8))
+                .help("Open Automation settings")
+            }
+        }
+        .padding(.leading, 34)
+    }
+
+    private var jumpPermissionHelp: String {
+        jumpPermissionMessage == nil
+            ? "Grant Accessibility access for editor terminal focus"
+            : "Grant Automation access for editor terminal focus"
+    }
+
+    private func requestJumpPermission() {
+        if !AgentJumpService.isAccessibilityTrusted() {
+            let trusted = AgentJumpService.requestAccessibilityPermission(promptIfNeeded: true)
+            jumpPermissionRequired = !trusted
+
+            if trusted {
+                jumpPermissionMessage = nil
+                jumpToSession()
+            }
+            return
+        }
+
+        if jumpPermissionMessage != nil {
+            AgentJumpService.openAutomationSettings()
+            AgentJumpService.jump(to: session)
+            return
+        }
+
+        jumpPermissionRequired = false
+        jumpToSession()
+    }
+
+    private func refreshJumpPermissionState() {
+        guard AgentJumpService.requiresJumpPermission(for: session) else {
+            jumpPermissionRequired = false
+            jumpPermissionMessage = nil
+            return
+        }
+
+        jumpPermissionRequired = !AgentJumpService.isAccessibilityTrusted()
+        if !jumpPermissionRequired {
+            jumpPermissionMessage = nil
+        }
+    }
+
+    private var closeHelpText: String {
+        session.pid == nil ? "Dismiss session" : "Stop agent session"
     }
 
     private var header: some View {

@@ -24,6 +24,10 @@
 	<array>
 		<string>com.spotify.client</string>
 		<string>com.apple.Music</string>
+		<string>com.apple.systemevents</string>
+		<string>com.microsoft.VSCode</string>
+		<string>com.todesktop.230313mzl4w4u92</string>
+		<string>com.cursor.Cursor</string>
 	</array>
 	<key>com.apple.security.temporary-exception.mach-lookup.global-name</key>
 	<array>

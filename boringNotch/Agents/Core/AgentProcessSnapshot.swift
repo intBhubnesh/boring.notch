@@ -14,6 +14,7 @@ struct AgentProcessSnapshot: Sendable, Hashable {
     var parentExecutablePath: String?
     var cwd: String?
     var hostApplication: String? = nil
+    var tty: String? = nil
     var observedAt: Date
 
     var sessionID: String {
@@ -73,6 +74,7 @@ extension AgentProcessSnapshot {
             parentExecutablePath: xpcDictionary["parentExecutablePath"] as? String,
             cwd: xpcDictionary["cwd"] as? String,
             hostApplication: xpcDictionary["hostApplication"] as? String,
+            tty: xpcDictionary["tty"] as? String,
             observedAt: observedAt
         )
     }

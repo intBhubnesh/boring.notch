@@ -155,4 +155,130 @@ final class SessionStateTests: XCTestCase {
         XCTAssertTrue(state.sessions.isEmpty)
         XCTAssertEqual(state.runningCount, 0)
     }
+
+    func testProcessSnapshotMergesIntoMatchingHookSession() {
+        var state = SessionState()
+        state.apply(.sessionStarted(
+            sessionID: "claude-session",
+            tool: .claudeCode,
+            title: "fix auth bug",
+            cwd: "/Users/mint/Code/boring.notch",
+            at: date(0)
+        ))
+        state.apply(.statusUpdated(sessionID: "claude-session", summary: "Writing middleware.ts", at: date(1)))
+
+        let snapshot = AgentProcessSnapshot(
+            pid: 456,
+            parentPID: 11,
+            tool: .claudeCode,
+            executablePath: "/Users/mint/.vscode/extensions/anthropic.claude-code/resources/native-binary/claude",
+            commandLine: "claude --output-format stream-json",
+            parentExecutablePath: nil,
+            cwd: "/Users/mint/Code/boring.notch",
+            hostApplication: "VS Code",
+            tty: "/dev/ttys001",
+            observedAt: date(2)
+        )
+
+        state.reconcileProcessSnapshots([snapshot], at: date(3))
+
+        XCTAssertNil(state.sessions[snapshot.sessionID])
+        XCTAssertEqual(state.sessions["claude-session"]?.hostApplication, "VS Code")
+        XCTAssertEqual(state.sessions["claude-session"]?.pid, 456)
+        XCTAssertEqual(state.sessions["claude-session"]?.tty, "/dev/ttys001")
+        XCTAssertEqual(state.sessions["claude-session"]?.title, "fix auth bug")
+        XCTAssertEqual(state.sessions["claude-session"]?.summary, "Writing middleware.ts")
+    }
+
+    func testMultipleProcessSnapshotsMatchingSameHookSessionDoNotCollide() {
+        var state = SessionState()
+        state.apply(.sessionStarted(
+            sessionID: "claude-session",
+            tool: .claudeCode,
+            title: "fix auth bug",
+            cwd: "/Users/mint/Code/boring.notch",
+            at: date(0)
+        ))
+        state.apply(.statusUpdated(sessionID: "claude-session", summary: "Writing middleware.ts", at: date(1)))
+
+        let mine = AgentProcessSnapshot(
+            pid: 456,
+            parentPID: 11,
+            tool: .claudeCode,
+            executablePath: "/opt/homebrew/bin/claude",
+            commandLine: "claude",
+            parentExecutablePath: nil,
+            cwd: "/Users/mint/Code/boring.notch",
+            hostApplication: "VS Code",
+            tty: "/dev/ttys001",
+            observedAt: date(2)
+        )
+        let otherTabSameRepo = AgentProcessSnapshot(
+            pid: 789,
+            parentPID: 22,
+            tool: .claudeCode,
+            executablePath: "/opt/homebrew/bin/claude",
+            commandLine: "claude",
+            parentExecutablePath: nil,
+            cwd: "/Users/mint/Code/boring.notch",
+            hostApplication: "Terminal",
+            tty: "/dev/ttys013",
+            observedAt: date(2)
+        )
+
+        state.reconcileProcessSnapshots([mine, otherTabSameRepo], at: date(3))
+
+        // Exactly one snapshot may claim the hook session per pass; the other
+        // must survive as its own distinct process-scanned session instead of
+        // being silently dropped or corrupting the hook session's jump target.
+        let mergedIntoHook = state.sessions["claude-session"]
+        XCTAssertNotNil(mergedIntoHook)
+        XCTAssertTrue([456, 789].contains(mergedIntoHook?.pid))
+
+        let leftoverPID = mergedIntoHook?.pid == 456 ? 789 : 456
+        let leftoverTTY = leftoverPID == 456 ? "/dev/ttys001" : "/dev/ttys013"
+        let leftoverSession = state.sessions.values.first { $0.pid == leftoverPID }
+        XCTAssertNotNil(leftoverSession, "the non-claiming snapshot must not be dropped")
+        XCTAssertEqual(leftoverSession?.tty, leftoverTTY)
+        XCTAssertNotEqual(leftoverSession?.id, "claude-session")
+
+        XCTAssertEqual(state.sessions.count, 2)
+    }
+
+    func testSessionStartPreservesJumpMetadataForExistingHookSession() {
+        var state = SessionState()
+        state.apply(.sessionStarted(
+            sessionID: "claude-session",
+            tool: .claudeCode,
+            title: "fix auth bug",
+            cwd: "/Users/mint/Code/boring.notch",
+            at: date(0)
+        ))
+
+        let snapshot = AgentProcessSnapshot(
+            pid: 456,
+            parentPID: 11,
+            tool: .claudeCode,
+            executablePath: "/Users/mint/.vscode/extensions/anthropic.claude-code/resources/native-binary/claude",
+            commandLine: "claude --output-format stream-json",
+            parentExecutablePath: nil,
+            cwd: "/Users/mint/Code/boring.notch",
+            hostApplication: "VS Code",
+            tty: "/dev/ttys001",
+            observedAt: date(1)
+        )
+        state.reconcileProcessSnapshots([snapshot], at: date(2))
+
+        state.apply(.sessionStarted(
+            sessionID: "claude-session",
+            tool: .claudeCode,
+            title: "fix auth bug",
+            cwd: "/Users/mint/Code/boring.notch",
+            at: date(3)
+        ))
+
+        XCTAssertEqual(state.sessions["claude-session"]?.hostApplication, "VS Code")
+        XCTAssertEqual(state.sessions["claude-session"]?.pid, 456)
+        XCTAssertEqual(state.sessions["claude-session"]?.tty, "/dev/ttys001")
+    }
 }
